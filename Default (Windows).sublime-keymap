@@ -1,0 +1,4 @@
+[
+	{"keys": ["ctrl+alt+u"], "command": "accu_term_upload"},
+	{"keys": ["ctrl+alt+o"], "command": "accu_term_download"}
+]

@@ -1,0 +1,42 @@
+[
+	{
+		"caption": "AccuTermClient Upload",
+		"command": "accu_term_upload"
+	},
+	{
+		"caption": "AccuTermClient Compile",
+		"command": "accu_term_compile"
+	},
+	{
+		"caption": "AccuTermClient Release",
+		"command": "accu_term_release"
+	},
+	{
+		"caption": "AccuTermClient Open",
+		"command": "accu_term_download"
+	},
+	{
+		"caption": "AccuTermClient Unlock",
+		"command": "accu_term_unlock"
+	},
+	{
+		"caption": "AccuTermClient Refresh",
+		"command": "accu_term_refresh"
+	},
+	{
+		"caption": "AccuTermClient List",
+		"command": "accu_term_list"
+	},
+	{
+		"caption": "AccuTermClient Lock",
+		"command": "accu_term_lock"
+	},
+	{
+		"caption": "AccuTermClient Global Upcase",
+		"command": "accu_term_global_upcase"
+	},
+	{
+		"caption": "AccuTermClient Global Downcase",
+		"command": "accu_term_global_downcase"
+	},
+]
