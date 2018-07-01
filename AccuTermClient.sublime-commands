@@ -39,4 +39,33 @@
 		"caption": "AccuTermClient Global Downcase",
 		"command": "accu_term_global_downcase"
 	},
+	{
+		"caption": "AccuTermClient Execute (Console)",
+		"command": "accu_term_execute"
+	},
+	{
+		"caption": "AccuTermClient Execute (New File)",
+		"command": "accu_term_execute",
+		"args": {"output_to": "new"}
+	},
+	{
+		"caption": "AccuTermClient Execute (Append to Current)",
+		"command": "accu_term_execute",
+		"args": {"output_to": "append"}	
+	},
+	{
+		"caption": "AccuTermClient Execute (Replace Current)",
+		"command": "accu_term_execute",
+		"args": {"output_to": "replace"}	
+	},
+	{
+		"caption": "AccuTermClient Oconv",
+		"command": "accu_term_conv",
+		"args": {"conv_type": "oconv"}	
+	},
+	{
+		"caption": "AccuTermClient Iconv",
+		"command": "accu_term_conv",
+		"args": {"conv_type": "iconv"}	
+	},
 ]
