@@ -307,14 +307,20 @@ class AccuTermListCommand(sublime_plugin.WindowCommand):
     def run(self, **kwargs):
         self.mv_svr = connect()
         if self.mv_svr:
-            self.list = ''.join(self.mv_svr.Execute('sort ' + self.mv_svr.MDName + ' with A1 = "F" "Q" A0 COL-HDR-SUPP ID-SUPP NOPAGE', '', 1)).split('\r\n')
+            if self.mv_svr.MDName == 'VOC':
+                self.list = ''.join(self.mv_svr.Execute('SORT ' + self.mv_svr.MDName + ' WITH A1 = "F" "Q" A0 COL-HDR-SUPP ID-SUPP NOPAGE COUNT.SUP', '', 1)).split('\r\n')
+            else:
+                self.list = ''.join(self.mv_svr.Execute('SORT ' + self.mv_svr.MDName + ' WITH A1 = "D" "Q" A0 COL-HDR-SUPP ID-SUPP NOPAGE NI-SUPP', '', 1)).split('\r\n')
             if check_error_message(self.mv_svr, ''):
                 sublime.active_window().show_quick_panel(self.list, self.listFile)
 
     def listFile(self, list_index):
         if list_index > -1:
             self.mv_file = self.list[list_index]
-            self.list = ''.join(self.mv_svr.Execute('sort ' + self.mv_file + ' A0 COL-HDR-SUPP ID-SUPP NOPAGE', '', 1)).split('\r\n')
+            if self.mv_svr.MDName == 'VOC':
+                self.list = ''.join(self.mv_svr.Execute('SORT ' + self.mv_file + ' A0 COL-HDR-SUPP ID-SUPP NOPAGE COUNT.SUP', '', 1)).split('\r\n')
+            else:
+                self.list = ''.join(self.mv_svr.Execute('SORT ' + self.mv_file + ' A0 COL-HDR-SUPP ID-SUPP NOPAGE NI-SUPP', '', 1)).split('\r\n')
             sublime.active_window().show_quick_panel(self.list, self.pickItem)
 
     def pickItem(self, item_index):
