@@ -185,7 +185,7 @@ class ConvCodeInputHandler(sublime_plugin.TextInputHandler):
 
     def preview(self, conv_code=''):
         text = ''
-        if conv_code != '' and AccuTermOconv.IsValid(conv_code):
+        if conv_code != '' and AccuTermConv.IsValid(conv_code):
             mv_svr = connect()
             if mv_svr.IsConnected(): 
                 text = mv_svr.Oconv(self.data, conv_code) if self.conv_type == 'oconv' else mv_svr.Iconv(self.data, conv_code)
