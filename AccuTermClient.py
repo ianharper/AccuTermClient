@@ -240,16 +240,19 @@ class AccuTermExecute(sublime_plugin.TextCommand):
         return results
 
     def run(self, edit, output_to='console', command=None): 
-        if not(command): return
+        if not(command):
+            sublime.active_window().show_input_panel('Enter command', '', lambda command: 
+                self.view.run_command("accu_term_execute", {"output_to": output_to, "command": command} ), 
+                None, None)
 
-        if output_to == 'new':
+        elif output_to == 'new':
             new_view = sublime.active_window().new_file()
             new_view.set_name(command)
             new_view.run_command('append', {"characters": self.run_commands(command)})
             new_view.set_scratch(True)
             new_view.run_command("accu_term_execute", {"output_to": "append"} )
             sublime.active_window().show_input_panel('Enter command', '', lambda command: 
-                self.view.run_command("accu_term_execute", {"output_to": "append", "command": command} ), 
+                new_view.run_command("accu_term_execute", {"output_to": "append", "command": command} ), 
                 None, None)
 
         elif output_to == 'append':
