@@ -1,4 +1,8 @@
 [
 	{"keys": ["ctrl+alt+u"], "command": "accu_term_upload"},
-	{"keys": ["ctrl+alt+o"], "command": "accu_term_download"}
+	{"keys": ["ctrl+alt+o"], "command": "accu_term_download"},
+	{"keys": ["ctrl+alt+e", "ctrl+alt+n"], "command": "accu_term_execute", "args": {"output_to": "new"} },
+	{"keys": ["ctrl+alt+e", "ctrl+alt+a"], "command": "accu_term_execute", "args": {"output_to": "append"} },
+	{"keys": ["ctrl+alt+e", "ctrl+alt+r"], "command": "accu_term_execute", "args": {"output_to": "replace"} },
+	{"keys": ["ctrl+alt+e", "ctrl+alt+c"], "command": "accu_term_execute", "args": {"output_to": "console"} },
 ]
