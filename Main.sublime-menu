@@ -1,0 +1,32 @@
+[
+  {
+    "caption": "Preferences",
+    "mnemonic": "n",
+    "id": "preferences",
+    "children":
+    [
+      {
+        "caption": "Package Settings",
+        "mnemonic": "P",
+        "id": "package-settings",
+        "children":
+        [
+          {
+            "caption": "AccuTermClient",
+            "children":
+            [
+              {
+                "caption": "Settings",
+                "command": "edit_settings", "args":
+                {
+                  "base_file": "${packages}/AccuTermClient/AccuTermClient.sublime-settings",
+                  "default": "// AccuTermClient Settings - User\n{\n\t$0\n}\n"
+                }
+              },
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
