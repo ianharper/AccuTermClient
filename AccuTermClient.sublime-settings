@@ -1,5 +1,9 @@
 {
 	"default_save_location": "%userprofile%\\code",
 	"remove_file_extensions": ["bp", "qm", "d3", "proc"],
-	"compile_command": "basic"
+	"compile_command": "BASIC",
+	"result_line_regex": {
+		"QM": "([0-9]+):\\s()(.*)",
+		"D3": "Line.([0-9]+).()\\s+(.*)"
+	}
 }
