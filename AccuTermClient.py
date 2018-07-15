@@ -64,7 +64,7 @@ class AccuTermUploadCommand(sublime_plugin.TextCommand):
 
 
 class AccuTermCompileCommand(sublime_plugin.WindowCommand):
-    panel = None
+    view = None
 
     def get_result_line_regex(self, mv_svr):
         host_type = sublime.load_settings('AccuTermClient.sublime-settings').get('host_type', 'auto')
@@ -77,16 +77,16 @@ class AccuTermCompileCommand(sublime_plugin.WindowCommand):
         return result_line_regex
 
     def run(self, **kwargs):
-        cur_view = self.window.active_view()
-        if cur_view.is_dirty(): cur_view.run_command('save')
-        data = cur_view.substr(sublime.Region(0, cur_view.size())).replace('\n', '\xFE')        
-        sublime.set_timeout_async( lambda: self.upload(self, cur_view=cur_view, data = data), 0)
+        self.view = self.window.active_view()
+        if self.view.is_dirty(): self.view.run_command('save')
+        data = self.view.substr(sublime.Region(0, self.view.size())).replace('\n', '\xFE')        
+        sublime.set_timeout_async( lambda: self.upload(self, data = data), 0)
 
-    def upload(self, *args, cur_view=None, data=None):
+    def upload(self, *args, data=None):
         if threading.currentThread ().getName() != 'MainThread':
            pythoncom.CoInitialize ()
-        file_name = cur_view.file_name()
-        (mv_file, mv_item) = get_file_item(cur_view)
+        file_name = self.view.file_name()
+        (mv_file, mv_item) = get_file_item(self.view)
         panel = self.window.create_output_panel('exec', False)
         self.panel = panel
 
@@ -360,19 +360,18 @@ class AccuTermListCommand(sublime_plugin.WindowCommand):
                 self.mv_svr.Disconnect()
 
 
-# class AccuTermLockCommand(sublime_plugin.TextCommand):
-class AccuTermLockCommand(sublime_plugin.WindowCommand):
-    def run(self):
-        file_name = self.window.active_view().file_name()
-        (mv_file, mv_item) = get_file_item(self.window.active_view())
+class AccuTermLockCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        file_name = self.view.file_name()
+        (mv_file, mv_item) = get_file_item(self.view)
         mv_svr = connect()
         if mv_svr:
             data = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 1)
             if mv_svr.LastError == 260:
-                self.window.destroy_output_panel('AccuTermClient')
-                self.window.status_message(mv_file + ' ' + mv_item + ' is already locked')
+                self.view.window().destroy_output_panel('AccuTermClient')
+                self.view.window().status_message(mv_file + ' ' + mv_item + ' is already locked')
             else :
-                check_error_message(self.window, mv_svr, mv_file + ' ' + mv_item + ' locked')
+                check_error_message(self.view.window(), mv_svr, mv_file + ' ' + mv_item + ' locked')
             mv_svr.Disconnect()
 
 def changeCase(text, case_funct='upper()'):
