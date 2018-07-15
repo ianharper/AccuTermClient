@@ -40,9 +40,8 @@ This package connects to your MV database using AccuTerm's FTSERVER. To use, lau
 * Global Downcase - Convert case of currently open file to lowercase while preserving case in strings and comments.
 
 # Todo
-* Add aditional keyboard shortcuts.
 * Refactor AccuTermClient.py to remove duplicated code.
 * Add more event listener functions (automatic check for changes on server)
 * Fix need to unlock & re-lock items on MV server on upload.
 * Allow user to set default file ext. for MV source code.
-
+* Add support for DBMS type in settings.

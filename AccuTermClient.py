@@ -8,34 +8,37 @@ import pythoncom
 import re
 
 
-def log_output(output_text, panel_name='AccuTermClient'):
+def log_output(window, output_text, panel_name='AccuTermClient'):
     output_text = output_text.replace('\r', '')
-    panel = sublime.active_window().find_output_panel(panel_name)
+    panel = window.find_output_panel(panel_name)
     if panel == None:
-        panel = sublime.active_window().create_output_panel(panel_name, False)
+        panel = window.create_output_panel(panel_name, False)
     panel.run_command('append', {'characters': output_text + '\n'})
     panel.show(panel.size())
-    sublime.active_window().run_command('show_panel', {'panel': 'output.' + panel_name})
+    window.run_command('show_panel', {'panel': 'output.' + panel_name})
 
 
 def connect(panel_name='AccuTermClient'):
     mv_svr = Dispatch('atMVSvr71.Server')
     if mv_svr.Connect():
-        # log_output('Connected', panel_name)
+        # log_output(sublime.active_window().active_view(), 'Connected', panel_name) # Ideally the connecct would be passed the window but this is intended for debugging only.
         return mv_svr
 
 
-def check_error_message(mv_svr, success_msg='Success'):
+def check_error_message(window, mv_svr, success_msg='Success'):
     if mv_svr.LastErrorMessage:
-        log_output(str(mv_svr.LastError) + " " + mv_svr.LastErrorMessage)
-        log_output('Connection Failed', panel_name)
+        log_output(window, str(mv_svr.LastError) + " " + mv_svr.LastErrorMessage)
+        log_output(window, 'Connection Failed', panel_name)
         return None
         return False
     else:
-        log_output(success_msg)
-        sublime.active_window().destroy_output_panel('AccuTermClient')
-        sublime.active_window().status_message(success_msg)
+        log_output(window, success_msg)
+        window.destroy_output_panel('AccuTermClient')
+        window.status_message(success_msg)
         return True
+
+def getHostType(mv_svr):
+    return mv_svr.Readitem('ACCUTERMCTRL', 'KMTCFG', 51)
 
 def get_file_item(file_name):
     if type(file_name) == sublime.View: file_name = file_name.file_name()
@@ -45,8 +48,8 @@ def get_file_item(file_name):
     if os.path.splitext(mv_item.lower())[1][1:] in remove_file_ext: mv_item = os.path.splitext(mv_item)[0]
     return (mv_file, mv_item)
 
-def get_base_path():
-    project_file_name = sublime.active_window().project_file_name()
+def get_base_path(window=sublime.active_window()):
+    project_file_name = window.project_file_name()
     base_path = sublime.load_settings('AccuTermClient.sublime-settings').get('default_save_location', '%userprofile%')
     return os.path.dirname(project_file_name) if bool(project_file_name) else base_path
 
@@ -57,14 +60,24 @@ class AccuTermUploadCommand(sublime_plugin.TextCommand):
         mv_svr = connect()
         if mv_svr:
             mv_svr.WriteItem(mv_file, mv_item, data, 0, 0, 0, 1)
-            check_error_message(mv_svr, 'Uploaded to ' + mv_file + ' ' + mv_item)
+            check_error_message(self.view.window(), mv_svr, 'Uploaded to ' + mv_file + ' ' + mv_item)
 
 
 class AccuTermCompileCommand(sublime_plugin.WindowCommand):
     panel = None
 
+    def get_result_line_regex(self, mv_svr):
+        host_type = sublime.load_settings('AccuTermClient.sublime-settings').get('host_type', 'auto')
+        if host_type.lower() == 'auto': host_type = getHostType(mv_svr)
+        result_line_regex = sublime.load_settings('AccuTermClient.sublime-settings').get('result_line_regex', None)
+        if result_line_regex:
+            result_line_regex = result_line_regex[host_type]  
+        else:
+            result_line_regex = ''
+        return result_line_regex
+
     def run(self, **kwargs):
-        cur_view = sublime.active_window().active_view()
+        cur_view = self.window.active_view()
         if cur_view.is_dirty(): cur_view.run_command('save')
         data = cur_view.substr(sublime.Region(0, cur_view.size())).replace('\n', '\xFE')        
         sublime.set_timeout_async( lambda: self.upload(self, cur_view=cur_view, data = data), 0)
@@ -74,41 +87,41 @@ class AccuTermCompileCommand(sublime_plugin.WindowCommand):
            pythoncom.CoInitialize ()
         file_name = cur_view.file_name()
         (mv_file, mv_item) = get_file_item(cur_view)
-        # panel = sublime.Window.create_output_panel(sublime.active_window(), 'exec', True)
-        panel = sublime.active_window().create_output_panel('exec', False)
+        panel = self.window.create_output_panel('exec', False)
         self.panel = panel
-        if panel:
-            panel.settings().set("result_file_regex", r"Compiling.\s(.*)\s([0-9]*)")
-            panel.settings().set("result_line_regex", r"Line.([0-9]+).()\s+(.*)")
 
         mv_svr = connect()
-        if mv_svr:
+        if mv_svr.IsConnected():
+            if panel:
+                panel.settings().set("result_file_regex", r"Compiling:\s(.*)()")
+                panel.settings().set("result_line_regex", self.get_result_line_regex(mv_svr))
+
             mv_svr.WriteItem(mv_file, mv_item, data, 0, 0, 0, 1)
             if mv_svr.LastErrorMessage:
-                log_output(mv_svr.LastErrorMessage, 'exec')
+                log_output(self.window, mv_svr.LastErrorMessage, 'exec')
             else:
-                sublime.active_window().destroy_output_panel('AccuTermClient')
+                self.window.destroy_output_panel('AccuTermClient')
                 compile_command = sublime.load_settings('AccuTermClient.sublime-settings').get('compile_command', 'BASIC')
                 result = mv_svr.Execute(compile_command + ' ' + mv_file + ' ' + mv_item)
-                log_output('Compiling: ' + file_name + ' 0' + '\n' + result, 'exec')
+                log_output(self.window, 'Compiling: ' + file_name + '\n' + result, 'exec')
                 if result.split('\n')[-1][:5] == '[241]': 
-                    sublime.active_window().destroy_output_panel('exec')
-                    sublime.active_window().status_message(mv_file + ' ' + mv_item + ' compiled')
-                    sublime.active_window().focus_view( sublime.active_window().find_open_file(file_name) )
-                else:
-                    sublime.active_window().run_command('show_panel', {'panel': 'output.exec'})
+                    self.window.destroy_output_panel('exec')
+                    self.window.status_message(mv_file + ' ' + mv_item + ' compiled')
+                    # self.window.focus_view( self.window.find_open_file(file_name) )
+                # else:
+                #     sublime.active_window().run_command('show_panel', {'panel': 'output.exec'})
 
 
 class AccuTermReleaseCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         file_name = self.view.file_name()
         if file_name == None: file_name = os.sep.join([self.view.settings().get('default_dir'), self.view.name()])
-        log_output(file_name)
+        log_output(self.view.window(), file_name)
         (mv_file, mv_item) = get_file_item(file_name)
         mv_svr = connect()
         if mv_svr:
             mv_svr.UnlockItem(mv_file, mv_item)
-            check_error_message(mv_svr, 'Released ' + mv_file + ' ' + mv_item)
+            check_error_message(self.view.window(), mv_svr, 'Released ' + mv_file + ' ' + mv_item)
 
 
 class AccuTermReplaceFileCommand(sublime_plugin.TextCommand):
@@ -125,27 +138,27 @@ class AccuTermDownload(sublime_plugin.WindowCommand):
         item_ref = item_ref.split()
         if len(item_ref) == 2:
             [mv_file, mv_item] = item_ref
-            file_name = os.sep.join([get_base_path(), mv_file, mv_item + '.bp'])
+            file_name = os.sep.join([get_base_path(self.window), mv_file, mv_item + '.bp'])
             mv_svr = connect()
             if mv_svr:
                 if bool( mv_svr.ItemExists(mv_file, mv_item) ):
                     mv_svr.UnlockItem(mv_file, mv_item)
                     data = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 1)
-                    if check_error_message(mv_svr, 'Download success'):
+                    if check_error_message(self.window, mv_svr, 'Download success'):
                         if not os.path.exists(file_name): 
                             new_view = self.window.new_file()
                             new_view.set_name(mv_item + '.bp')
-                            default_dir = get_base_path() + os.sep + mv_file
+                            default_dir = get_base_path(self.window) + os.sep + mv_file
                             if not os.path.exists(default_dir): os.makedirs(default_dir)
                             new_view.settings().set('default_dir', default_dir)
                         else: 
                             new_view = self.window.open_file(file_name)
                         new_view.run_command('accu_term_replace_file', {"text": data})
                 else: 
-                    log_output(mv_file + ' ' + mv_item + ' not found.')
+                    log_output(self.window, mv_file + ' ' + mv_item + ' not found.')
                 mv_svr.Disconnect()
         else:
-            log_output('Invalid Input: ' + item_ref + ' (Must be [file] [item])')
+            log_output(self.window, 'Invalid Input: ' + item_ref + ' (Must be [file] [item])')
 
     def run(self, **kwargs):
         self.window.show_input_panel('Enter the MV file and item', '', self.on_done, None, None)
@@ -198,7 +211,7 @@ class AccuTermConv(sublime_plugin.TextCommand):
  
     def run(self, edit, conv_type='oconv', data='', conv_code=''):
         mv_svr = connect()
-        check_error_message(mv_svr)
+        check_error_message(self.view.window(), mv_svr)
         if mv_svr.IsConnected(): 
             mv_svr.Oconv(data, conv_code)
 
@@ -236,28 +249,28 @@ class AccuTermExecute(sublime_plugin.TextCommand):
             for command in commands:
                 results += command + '\n'
                 results += mv_svr.Execute(command, '', 1).replace('\x1b', '').replace(os.linesep, '\n') + '\n\n'
-                check_error_message(mv_svr, '')
+                check_error_message(self.view.window(), mv_svr, '')
         return results
 
     def run(self, edit, output_to='console', command=None): 
         if not(command):
-            sublime.active_window().show_input_panel('Enter command', '', lambda command: 
+            self.view.window().show_input_panel('Enter command', '', lambda command: 
                 self.view.run_command("accu_term_execute", {"output_to": output_to, "command": command} ), 
                 None, None)
 
         elif output_to == 'new':
-            new_view = sublime.active_window().new_file()
+            new_view = self.view.window().new_file()
             new_view.set_name(command)
             new_view.run_command('append', {"characters": self.run_commands(command)})
             new_view.set_scratch(True)
             new_view.run_command("accu_term_execute", {"output_to": "append"} )
-            sublime.active_window().show_input_panel('Enter command', '', lambda command: 
+            self.view.window().show_input_panel('Enter command', '', lambda command: 
                 new_view.run_command("accu_term_execute", {"output_to": "append", "command": command} ), 
                 None, None)
 
         elif output_to == 'append':
             self.view.run_command('append', {"characters": self.run_commands(command)})
-            sublime.active_window().show_input_panel('Enter command', '', lambda command: 
+            self.view.window().show_input_panel('Enter command', '', lambda command: 
                 self.view.run_command("accu_term_execute", {"output_to": "append", "command": command} ), 
                 None, None)
 
@@ -266,7 +279,7 @@ class AccuTermExecute(sublime_plugin.TextCommand):
             self.view.replace(edit, sublime.Region(0, self.view.size()), self.run_commands(command))
 
         else:
-            log_output( self.run_commands(command) )
+            log_output(self.view.window(), self.run_commands(command) )
 
 
 class AccuTermUnlock(sublime_plugin.WindowCommand):
@@ -277,10 +290,10 @@ class AccuTermUnlock(sublime_plugin.WindowCommand):
             mv_svr = connect()
             if mv_svr:
                 mv_svr.UnlockItem(mv_file, mv_item)
-                check_error_message(mv_svr, mv_file + ' ' + mv_item + ' unlocked')
+                check_error_message(self.window, mv_svr, mv_file + ' ' + mv_item + ' unlocked')
                 mv_svr.Disconnect()
         else:
-            log_output('Invalid Input: ' + item_ref + ' (Must be [file] [item])')
+            log_output(self.window, 'Invalid Input: ' + item_ref + ' (Must be [file] [item])')
 
     def run(self, **kwargs):
         self.window.show_input_panel('Enter the MV file and item', '', self.on_done, None, None)
@@ -294,7 +307,7 @@ class AccuTermRefreshCommand(sublime_plugin.TextCommand):
         if mv_svr:
             mv_svr.UnlockItem(mv_file, mv_item)
             data = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 1)
-            if check_error_message(mv_svr, mv_file + ' ' + mv_item + ' refreshed and locked'):
+            if check_error_message(self.window, mv_svr, mv_file + ' ' + mv_item + ' refreshed and locked'):
                 self.view.window().open_file(file_name).run_command('accu_term_replace_file', {"text": data})
             mv_svr.Disconnect()
 
@@ -314,8 +327,8 @@ class AccuTermListCommand(sublime_plugin.WindowCommand):
                 self.list = ''.join(self.mv_svr.Execute('SORT ' + self.mv_svr.MDName + ' WITH A1 = "F" "Q" A0 COL-HDR-SUPP ID-SUPP NOPAGE COUNT.SUP', '', 1)).split('\r\n')
             else:
                 self.list = ''.join(self.mv_svr.Execute('SORT ' + self.mv_svr.MDName + ' WITH A1 = "D" "Q" A0 COL-HDR-SUPP ID-SUPP NOPAGE NI-SUPP', '', 1)).split('\r\n')
-            if check_error_message(self.mv_svr, ''):
-                sublime.active_window().show_quick_panel(self.list, self.listFile)
+            if check_error_message(self.window, self.mv_svr, ''):
+                self.window.show_quick_panel(self.list, self.listFile)
 
     def listFile(self, list_index):
         if list_index > -1:
@@ -324,21 +337,21 @@ class AccuTermListCommand(sublime_plugin.WindowCommand):
                 self.list = ''.join(self.mv_svr.Execute('SORT ' + self.mv_file + ' A0 COL-HDR-SUPP ID-SUPP NOPAGE COUNT.SUP', '', 1)).split('\r\n')
             else:
                 self.list = ''.join(self.mv_svr.Execute('SORT ' + self.mv_file + ' A0 COL-HDR-SUPP ID-SUPP NOPAGE NI-SUPP', '', 1)).split('\r\n')
-            sublime.active_window().show_quick_panel(self.list, self.pickItem)
+            self.window.show_quick_panel(self.list, self.pickItem)
 
     def pickItem(self, item_index):
         if item_index > -1:
             mv_file = self.mv_file
             mv_item = self.list[item_index]
-            file_name = os.sep.join([get_base_path(), mv_file, mv_item + '.bp'])
+            file_name = os.sep.join([get_base_path(self.window), mv_file, mv_item + '.bp'])
             if self.mv_svr.IsConnected():
                 self.mv_svr.UnlockItem(mv_file, mv_item)
                 data = self.mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 1)
-                if check_error_message(self.mv_svr, 'Download success'):
+                if check_error_message(self.window, self.mv_svr, 'Download success'):
                     if not os.path.exists(file_name): 
                         new_view = self.window.new_file()
                         new_view.set_name(mv_item + '.bp')
-                        default_dir = get_base_path() + os.sep + mv_file
+                        default_dir = get_base_path(self.window) + os.sep + mv_file
                         if not os.path.exists(default_dir): os.makedirs(default_dir)
                         new_view.settings().set('default_dir', default_dir)
                     else: 
@@ -347,18 +360,19 @@ class AccuTermListCommand(sublime_plugin.WindowCommand):
                 self.mv_svr.Disconnect()
 
 
-class AccuTermLockCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        file_name = self.view.file_name()
-        (mv_file, mv_item) = get_file_item(self.view)
+# class AccuTermLockCommand(sublime_plugin.TextCommand):
+class AccuTermLockCommand(sublime_plugin.WindowCommand):
+    def run(self):
+        file_name = self.window.active_view().file_name()
+        (mv_file, mv_item) = get_file_item(self.window.active_view())
         mv_svr = connect()
         if mv_svr:
             data = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 1)
             if mv_svr.LastError == 260:
-                sublime.active_window().destroy_output_panel('AccuTermClient')
-                sublime.active_window().status_message(mv_file + ' ' + mv_item + ' is already locked')
+                self.window.destroy_output_panel('AccuTermClient')
+                self.window.status_message(mv_file + ' ' + mv_item + ' is already locked')
             else :
-                check_error_message(mv_svr, mv_file + ' ' + mv_item + ' locked')
+                check_error_message(self.window, mv_svr, mv_file + ' ' + mv_item + ' locked')
             mv_svr.Disconnect()
 
 def changeCase(text, case_funct='upper()'):
@@ -389,15 +403,13 @@ def changeCase(text, case_funct='upper()'):
 
 class AccuTermGlobalUpcase(sublime_plugin.TextCommand):
     def run(self, edit):
-        cur_view = sublime.active_window().active_view()
-        source_upcase = changeCase( cur_view.substr(sublime.Region(0, cur_view.size())), 'upper')
-        sublime.set_timeout_async(lambda: cur_view.run_command('accu_term_replace_file', {"text": source_upcase}), 0)
+        source_upcase = changeCase( self.view.substr(sublime.Region(0, self.view.size())), 'upper')
+        sublime.set_timeout_async(lambda: self.view.run_command('accu_term_replace_file', {"text": source_upcase}), 0)
 
 class AccuTermGlobalDowncase(sublime_plugin.TextCommand):
     def run(self, edit):       
-        cur_view = sublime.active_window().active_view()
-        source_upcase = changeCase( cur_view.substr(sublime.Region(0, cur_view.size())), 'lower')
-        cur_view.run_command('accu_term_replace_file', {"text": source_upcase})        
+        source_upcase = changeCase( self.view.substr(sublime.Region(0, self.view.size())), 'lower')
+        self.view.run_command('accu_term_replace_file', {"text": source_upcase})        
         
 class EventListener(sublime_plugin.EventListener):
     def on_pre_close(self, view):
