@@ -21,8 +21,10 @@ def log_output(window, output_text, panel_name='AccuTermClient'):
 def connect(panel_name='AccuTermClient'):
     mv_svr = Dispatch('atMVSvr71.Server')
     if mv_svr.Connect():
-        # log_output(sublime.active_window().active_view(), 'Connected', panel_name) # Ideally the connecct would be passed the window but this is intended for debugging only.
+        # log_output(sublime.active_window(), 'Connected', panel_name) # Ideally the connecct would be passed the window but this is intended for debugging only.
         return mv_svr
+    else: 
+        log_output(sublime.active_window(), 'Unable to connect to AccuTerm\nMake sure AccuTerm is running FTSERVER.', panel_name) # Ideally the connecct would be passed the window but this is intended for debugging only.
 
 
 def check_error_message(window, mv_svr, success_msg='Success'):
@@ -39,6 +41,14 @@ def check_error_message(window, mv_svr, success_msg='Success'):
 
 def getHostType(mv_svr):
     return mv_svr.Readitem('ACCUTERMCTRL', 'KMTCFG', 51)
+
+def get_setting_for_host(mv_svr, setting_name):
+    host_type = sublime.load_settings('AccuTermClient.sublime-settings').get('host_type', 'auto')
+    if host_type.lower() == 'auto': host_type = getHostType(mv_svr)
+    setting_val = sublime.load_settings('AccuTermClient.sublime-settings').get(setting_name, None)
+    if bool(host_type): setting_val = setting_val[host_type]
+    return setting_val
+
 
 def get_file_item(file_name):
     if type(file_name) == sublime.View: file_name = file_name.file_name()
@@ -70,7 +80,7 @@ class AccuTermCompileCommand(sublime_plugin.WindowCommand):
         host_type = sublime.load_settings('AccuTermClient.sublime-settings').get('host_type', 'auto')
         if host_type.lower() == 'auto': host_type = getHostType(mv_svr)
         result_line_regex = sublime.load_settings('AccuTermClient.sublime-settings').get('result_line_regex', None)
-        if result_line_regex:
+        if type(result_line_regex) == type({}) and host_type in result_line_regex:
             result_line_regex = result_line_regex[host_type]  
         else:
             result_line_regex = ''
@@ -314,16 +324,13 @@ class AccuTermRefreshCommand(sublime_plugin.TextCommand):
 
 
 class AccuTermListCommand(sublime_plugin.WindowCommand):
-    # def __init__(self, window):
-    #     super(AccuTermListCommand, self).__init__()
-    #     mv_svr = connect()
-    #     if mv_svr:
-    #         self.md_list = mv_svr.Execute('sort only ' + mv_svr.MDName + ' = "A" "D" *A0 (JICN')
-
     def run(self, **kwargs):
         self.mv_svr = connect()
         if self.mv_svr:
-            if self.mv_svr.MDName == 'VOC':
+            list_files_command = get_setting_for_host(self.mv_svr, 'list_files_command')
+            if list_files_command:
+                self.list = ''.join(self.mv_svr.Execute(list_files_command, '', 1)).split('\r\n')
+            elif self.mv_svr.MDName == 'VOC':
                 self.list = ''.join(self.mv_svr.Execute('SORT ' + self.mv_svr.MDName + ' WITH A1 = "F" "Q" A0 COL-HDR-SUPP ID-SUPP NOPAGE COUNT.SUP', '', 1)).split('\r\n')
             else:
                 self.list = ''.join(self.mv_svr.Execute('SORT ' + self.mv_svr.MDName + ' WITH A1 = "D" "Q" A0 COL-HDR-SUPP ID-SUPP NOPAGE NI-SUPP', '', 1)).split('\r\n')
@@ -333,7 +340,10 @@ class AccuTermListCommand(sublime_plugin.WindowCommand):
     def listFile(self, list_index):
         if list_index > -1:
             self.mv_file = self.list[list_index]
-            if self.mv_svr.MDName == 'VOC':
+            list_command = get_setting_for_host(self.mv_svr, 'list_command')
+            if list_command:
+                self.list = ''.join(self.mv_svr.Execute('SORT ' + self.mv_file + list_command, '', 1)).split('\r\n')
+            elif self.mv_svr.MDName == 'VOC':
                 self.list = ''.join(self.mv_svr.Execute('SORT ' + self.mv_file + ' A0 COL-HDR-SUPP ID-SUPP NOPAGE COUNT.SUP', '', 1)).split('\r\n')
             else:
                 self.list = ''.join(self.mv_svr.Execute('SORT ' + self.mv_file + ' A0 COL-HDR-SUPP ID-SUPP NOPAGE NI-SUPP', '', 1)).split('\r\n')

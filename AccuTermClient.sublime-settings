@@ -1,9 +1,20 @@
 {
 	"default_save_location": "%userprofile%\\code",
-	"remove_file_extensions": ["bp", "qm", "d3", "proc"],
+	"remove_file_extensions": ["bp", "qm", "d3", "proc", "jb"],
 	"compile_command": "BASIC",
 	"result_line_regex": {
 		"QM": "([0-9]+):\\s()(.*)",
-		"D3": "Line.([0-9]+).()\\s+(.*)"
+		"D3": "Line.([0-9]+).()\\s+(.*)",
+		"JB": "^.*:\\s(?=.*:\\sLine\\s(\\d+))(.*):.*"
+	},
+	"list_files_command": {
+		"JB": "ls -I *]* -I bin -I lib" ,
+		"D3": " WITH A1 = \"D\" \"Q\" A0 COL-HDR-SUPP ID-SUPP NOPAGE NI-SUPP",
+		"QM": " WITH A1 = \"F\" \"Q\" A0 COL-HDR-SUPP ID-SUPP NOPAGE COUNT.SUP"
+	},
+	"list_command": {
+		"JB": "  COL.HDR.SUPP",
+		"D3": " A0 COL-HDR-SUPP ID-SUPP NOPAGE NI-SUPP",
+		"QM": " A0 COL-HDR-SUPP ID-SUPP NOPAGE COUNT.SUP"
 	}
 }
