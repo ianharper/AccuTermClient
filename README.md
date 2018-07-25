@@ -45,3 +45,5 @@ This package connects to your MV database using AccuTerm's FTSERVER. To use, lau
 * Fix need to unlock & re-lock items on MV server on upload.
 * Allow user to set default file ext. for MV source code.
 * Add support for DBMS type in settings.
+* Document settings (what they do, how to change).
+* Add support for jBASE windows.
