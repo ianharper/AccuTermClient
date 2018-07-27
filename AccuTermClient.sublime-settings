@@ -9,8 +9,8 @@
 	},
 	"list_files_command": {
 		"JB": "ls -I *]* -I bin -I lib" ,
-		"D3": " WITH A1 = \"D\" \"Q\" A0 COL-HDR-SUPP ID-SUPP NOPAGE NI-SUPP",
-		"QM": " WITH A1 = \"F\" \"Q\" A0 COL-HDR-SUPP ID-SUPP NOPAGE COUNT.SUP"
+		"D3": "SORT MD WITH A1 = \"D\" \"Q\" A0 COL-HDR-SUPP ID-SUPP NOPAGE NI-SUPP",
+		"QM": "SORT VOC WITH A1 = \"F\" \"Q\" A0 COL-HDR-SUPP ID-SUPP NOPAGE COUNT.SUP"
 	},
 	"list_command": {
 		"JB": "  COL.HDR.SUPP",
