@@ -68,4 +68,8 @@
 		"command": "accu_term_conv",
 		"args": {"conv_type": "iconv"}	
 	},
+	{
+		"caption": "AccuTermClient Run Current File",
+		"command": "accu_term_run"
+	}
 ]

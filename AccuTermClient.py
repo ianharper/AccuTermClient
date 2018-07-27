@@ -22,9 +22,10 @@ def connect(panel_name='AccuTermClient'):
     mv_svr = Dispatch('atMVSvr71.Server')
     if mv_svr.Connect():
         # log_output(sublime.active_window(), 'Connected', panel_name) # Ideally the connecct would be passed the window but this is intended for debugging only.
-        return mv_svr
+        pass
     else: 
-        log_output(sublime.active_window(), 'Unable to connect to AccuTerm\nMake sure AccuTerm is running FTSERVER.', panel_name) # Ideally the connecct would be passed the window but this is intended for debugging only.
+        log_output(sublime.active_window(), 'Unable to connect to AccuTerm\nMake sure AccuTerm is running FTSERVER.', panel_name)
+    return mv_svr
 
 
 def check_error_message(window, mv_svr, success_msg='Success'):
@@ -46,7 +47,8 @@ def get_setting_for_host(mv_svr, setting_name):
     host_type = sublime.load_settings('AccuTermClient.sublime-settings').get('host_type', 'auto')
     if host_type.lower() == 'auto': host_type = getHostType(mv_svr)
     setting_val = sublime.load_settings('AccuTermClient.sublime-settings').get(setting_name, None)
-    if bool(host_type): setting_val = setting_val[host_type]
+    if bool(host_type): 
+        if host_type in setting_val: setting_val = setting_val[host_type]
     return setting_val
 
 
@@ -199,6 +201,7 @@ class ConvCodeInputHandler(sublime_plugin.TextInputHandler):
         self.view = view
         self.data = args['data']
         self.conv_type = args['conv_type']
+        self.mv_svr = connect()
 
     def name(self):
         return 'conv_code'
@@ -209,9 +212,8 @@ class ConvCodeInputHandler(sublime_plugin.TextInputHandler):
     def preview(self, conv_code=''):
         text = ''
         if conv_code != '' and AccuTermConv.IsValid(conv_code):
-            mv_svr = connect()
-            if mv_svr.IsConnected(): 
-                text = mv_svr.Oconv(self.data, conv_code) if self.conv_type == 'oconv' else mv_svr.Iconv(self.data, conv_code)
+            if self.mv_svr.IsConnected(): 
+                text = self.mv_svr.Oconv(self.data, conv_code) if self.conv_type == 'oconv' else self.mv_svr.Iconv(self.data, conv_code)
         return text
 
 
@@ -425,3 +427,16 @@ class EventListener(sublime_plugin.EventListener):
         if view.scope_name(0).split('.')[-1].strip() == 'd3-basic':
             view.run_command('accu_term_release')
     
+
+class AccuTermRunCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        file_name = self.view.file_name()
+        (mv_file, mv_item) = get_file_item(self.view)
+        mv_svr = connect()
+        if mv_svr.IsConnected(): 
+            if bool(mv_svr.ItemExists(mv_svr.MDName, mv_item)): 
+                command = mv_item 
+            else: 
+                command = 'RUN ' + mv_file + ' ' + mv_item
+            self.view.run_command('accu_term_execute', {"output_to": 'console', "command": command})
+
