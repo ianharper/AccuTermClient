@@ -170,7 +170,7 @@ class AccuTermDownload(sublime_plugin.WindowCommand):
                     log_output(self.window, mv_file + ' ' + mv_item + ' not found.')
                 mv_svr.Disconnect()
         else:
-            log_output(self.window, 'Invalid Input: ' + item_ref + ' (Must be [file] [item])')
+            log_output(self.window, 'Invalid Input: ' + ' '.join(item_ref) + ' (Must be [file] [item])')
 
     def run(self, **kwargs):
         self.window.show_input_panel('Enter the MV file and item', '', self.on_done, None, None)
