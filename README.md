@@ -13,6 +13,7 @@ AccuTerm client for Sublime Text.
 
 ### Extended Features - Limited availablity without additional configuration 
 These features require DBMS specific configuration to run. D3, QM, and jBASE are configured automatically. Additional DBMS can be setup manually (see the _Settings_ section below).
+
 * Compile source code
 * Browse files on MV server (jBASE Windows not supported)
 
@@ -21,6 +22,7 @@ These features require DBMS specific configuration to run. D3, QM, and jBASE are
 * PyWin32 Sublime Package
 * Windows Operating System
 * AccuTerm terminal emulator running the FTSERVER program
+
 
 ## Installation
 ### Using Sublime Package Manager
@@ -31,6 +33,7 @@ These features require DBMS specific configuration to run. D3, QM, and jBASE are
 1. cd %appdata%\Sublime Text 3\Packages
 2. git clone https://github.com/ianharper/AccuTermClient.git
 3. Install the PyWin32 Sublime package.
+
 
 ## Usage
 This package connects to your MV database using AccuTerm's FTSERVER program. To use, launch AccuTerm and run FTSERVER from TCL. AccuTermClient will connect to the AccuTerm server with no additional configuration. 
@@ -64,6 +67,7 @@ The settings can be accessed in the Preferences>Package Settings>AccuTermClient>
 | result_line_regex | Regular expression used to find the line number of compile errors. See [exec Target Options](https://www.sublimetext.com/docs/3/build_systems.html#exec_options) in the Sublime Docs for details. |
 | list_files_command | Command to list all the files in the account. Used in the AccuTermClient List command. The output must contain only the file name, one per line. |
 | list_command | This command is run after a file is chosen from the List command. The value is appended to limit the output to only the item names. |
+
 
 
 # Todo
