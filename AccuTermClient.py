@@ -60,6 +60,11 @@ def get_file_item(file_name):
     if os.path.splitext(mv_item.lower())[1][1:] in remove_file_ext: mv_item = os.path.splitext(mv_item)[0]
     return (mv_file, mv_item)
 
+def get_filename(window, mv_file, mv_item):
+    file_ext = sublime.load_settings('AccuTermClient.sublime-settings').get('default_file_extension', 'bp')
+    if file_ext != '': file_ext = '.' + file_ext
+    return os.sep.join([get_base_path(window), mv_file, mv_item + file_ext])
+
 def get_base_path(window=sublime.active_window()):
     project_file_name = window.project_file_name()
     base_path = sublime.load_settings('AccuTermClient.sublime-settings').get('default_save_location', '%userprofile%')
@@ -150,7 +155,7 @@ class AccuTermDownload(sublime_plugin.WindowCommand):
         item_ref = item_ref.split()
         if len(item_ref) == 2:
             [mv_file, mv_item] = item_ref
-            file_name = os.sep.join([get_base_path(self.window), mv_file, mv_item + '.bp'])
+            file_name = get_filename(self.window, mv_file, mv_item)
             mv_svr = connect()
             if mv_svr:
                 if bool( mv_svr.ItemExists(mv_file, mv_item) ):
