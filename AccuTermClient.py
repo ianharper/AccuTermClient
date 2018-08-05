@@ -70,6 +70,33 @@ def get_base_path(window=sublime.active_window()):
     base_path = sublime.load_settings('AccuTermClient.sublime-settings').get('default_save_location', '%userprofile%')
     return os.path.dirname(project_file_name) if bool(project_file_name) else base_path
 
+def download(window, mv_file, mv_item):
+    if bool(mv_file) and bool(mv_item):
+        file_name = get_filename(window, mv_file, mv_item)
+        mv_svr = connect()
+        if mv_svr:
+            if bool( mv_svr.ItemExists(mv_file, mv_item) ):
+                mv_svr.UnlockItem(mv_file, mv_item)
+                data = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 1)
+                if check_error_message(window, mv_svr, 'Download success'):
+                    if not os.path.exists(file_name): 
+                        new_view = window.new_file()
+                        new_view.set_name(mv_item + '.bp')
+                        default_dir = get_base_path(window) + os.sep + mv_file
+                        if not os.path.exists(default_dir): os.makedirs(default_dir)
+                        new_view.settings().set('default_dir', default_dir)
+                        host_type = getHostType(mv_svr)
+                        mv_syntaxes = sublime.load_settings('AccuTermClient.sublime-settings').get('syntax_file_locations', {})
+                        if host_type in mv_syntaxes: new_view.set_syntax_file(mv_syntaxes[host_type])
+                    else: 
+                        new_view = window.open_file(file_name)
+                    new_view.run_command('accu_term_replace_file', {"text": data})
+            else: 
+                log_output(window, mv_file + ' ' + mv_item + ' not found.')
+            mv_svr.Disconnect()
+    else:
+        log_output(window, 'Invalid Input: ' + str(mv_file) + ' ' + str(mv_item) + ' (Must be [file] [item])')
+
 class AccuTermUploadCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         (mv_file, mv_item) = get_file_item(self.view)
@@ -155,25 +182,7 @@ class AccuTermDownload(sublime_plugin.WindowCommand):
         item_ref = item_ref.split()
         if len(item_ref) == 2:
             [mv_file, mv_item] = item_ref
-            file_name = get_filename(self.window, mv_file, mv_item)
-            mv_svr = connect()
-            if mv_svr:
-                if bool( mv_svr.ItemExists(mv_file, mv_item) ):
-                    mv_svr.UnlockItem(mv_file, mv_item)
-                    data = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 1)
-                    if check_error_message(self.window, mv_svr, 'Download success'):
-                        if not os.path.exists(file_name): 
-                            new_view = self.window.new_file()
-                            new_view.set_name(mv_item + '.bp')
-                            default_dir = get_base_path(self.window) + os.sep + mv_file
-                            if not os.path.exists(default_dir): os.makedirs(default_dir)
-                            new_view.settings().set('default_dir', default_dir)
-                        else: 
-                            new_view = self.window.open_file(file_name)
-                        new_view.run_command('accu_term_replace_file', {"text": data})
-                else: 
-                    log_output(self.window, mv_file + ' ' + mv_item + ' not found.')
-                mv_svr.Disconnect()
+            download(self.window, mv_file, mv_item)
         else:
             log_output(self.window, 'Invalid Input: ' + ' '.join(item_ref) + ' (Must be [file] [item])')
 
@@ -319,15 +328,11 @@ class AccuTermUnlock(sublime_plugin.WindowCommand):
 class AccuTermRefreshCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         file_name = self.view.file_name()
-        (mv_file, mv_item) = get_file_item(self.view)
-        mv_svr = connect()
-        if mv_svr:
-            mv_svr.UnlockItem(mv_file, mv_item)
-            data = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 1)
-            if check_error_message(self.window, mv_svr, mv_file + ' ' + mv_item + ' refreshed and locked'):
-                self.view.window().open_file(file_name).run_command('accu_term_replace_file', {"text": data})
-            mv_svr.Disconnect()
-
+        if bool(file_name):
+            (mv_file, mv_item) = get_file_item(self.view)
+            download(self.view.window(), mv_file, mv_item)
+        else:
+            log_output(self.view.window(), 'Unable to determine MV file reference. Make sure this file is saved locally first.')
 
 
 class AccuTermListCommand(sublime_plugin.WindowCommand):
@@ -360,22 +365,7 @@ class AccuTermListCommand(sublime_plugin.WindowCommand):
         if item_index > -1:
             mv_file = self.mv_file
             mv_item = self.list[item_index]
-            file_name = os.sep.join([get_base_path(self.window), mv_file, mv_item + '.bp'])
-            if self.mv_svr.IsConnected():
-                self.mv_svr.UnlockItem(mv_file, mv_item)
-                data = self.mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 1)
-                if check_error_message(self.window, self.mv_svr, 'Download success'):
-                    if not os.path.exists(file_name): 
-                        new_view = self.window.new_file()
-                        new_view.set_name(mv_item + '.bp')
-                        default_dir = get_base_path(self.window) + os.sep + mv_file
-                        if not os.path.exists(default_dir): os.makedirs(default_dir)
-                        new_view.settings().set('default_dir', default_dir)
-                    else: 
-                        new_view = self.window.open_file(file_name)
-                    new_view.run_command('accu_term_replace_file', {"text": data})
-                self.mv_svr.Disconnect()
-
+            download(self.window, mv_file, mv_item)
 
 class AccuTermLockCommand(sublime_plugin.TextCommand):
     def run(self, edit):
