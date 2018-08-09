@@ -5,22 +5,22 @@
 	"compile_command": "BASIC",
 	"result_line_regex": {
 		"QM": "([0-9]+):\\s()(.*)",
-		"D3": "Line.([0-9]+).()\\s+(.*)",
+		"PICK": "Line.([0-9]+).()\\s+(.*)",
 		"JB": "^.*:\\s(?=.*:\\sLine\\s(\\d+))(.*):.*"
 	},
 	"list_files_command": {
 		"JB": "ls -I *]* -I bin -I lib" ,
-		"D3": "SORT MD WITH A1 = \"D\" \"Q\" A0 COL-HDR-SUPP ID-SUPP NOPAGE NI-SUPP",
+		"PICK": "SORT MD WITH A1 = \"D\" \"Q\" A0 COL-HDR-SUPP ID-SUPP NOPAGE NI-SUPP",
 		"QM": "SORT VOC WITH A1 = \"F\" \"Q\" A0 COL-HDR-SUPP ID-SUPP NOPAGE COUNT.SUP"
 	},
 	"list_command": {
 		"JB": "  COL.HDR.SUPP",
-		"D3": " A0 COL-HDR-SUPP ID-SUPP NOPAGE NI-SUPP",
+		"PICK": " A0 COL-HDR-SUPP ID-SUPP NOPAGE NI-SUPP",
 		"QM": " A0 COL-HDR-SUPP ID-SUPP NOPAGE COUNT.SUP"
 	},
 	"syntax_file_locations": {
 		"JB": "Packages/MVBasic-Syntax/jbase/jbase-basic.sublime-syntax",
-		"D3": "Packages/MVBasic-Syntax/d3/d3-basic.sublime-syntax",
+		"PICK": "Packages/MVBasic-Syntax/d3/d3-basic.sublime-syntax",
 		"QM": "Packages/MVBasic-Syntax/qm/qm-basic.sublime-syntax"
 	}
 
