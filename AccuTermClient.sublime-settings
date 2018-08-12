@@ -2,7 +2,7 @@
 	"default_save_location": "%userprofile%\\code",
 	"default_file_extension": "bp",
 	"remove_file_extensions": ["bp", "qm", "d3", "proc", "jb"],
-	"compile_command": "BASIC",
+	"compile_command": ["BASIC", "CATALOG"],
 	"result_line_regex": {
 		"QM": "([0-9]+):\\s()(.*)",
 		"PICK": "Line.([0-9]+).()\\s+(.*)",
