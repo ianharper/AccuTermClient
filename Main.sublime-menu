@@ -20,6 +20,7 @@
                 "command": "edit_settings", "args":
                 {
                   "base_file": "${packages}/AccuTermClient/AccuTermClient.sublime-settings",
+                  "user_file": "${packages}/User/AccuTermClient.sublime-settings",
                   "default": "// AccuTermClient Settings - User\n{\n\t$0\n}\n"
                 }
               },
