@@ -33,7 +33,8 @@
 					"command": "edit_settings", "args":
 					{
 						"base_file": "${packages}/AccuTermClient/Default ($platform).sublime-keymap",
-						"default": "[\n\t$0\n]\n"
+						"user_file": "${packages}/User/Default.sublime-keymap",
+						"default": "//Sublime Keymap - User\n[\n\t$0\n]\n"
 					}
 				},
 			]
