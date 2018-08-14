@@ -422,7 +422,7 @@ class AccuTermGlobalDowncase(sublime_plugin.TextCommand):
         
 class EventListener(sublime_plugin.EventListener):
     def on_pre_close(self, view):
-        if view.scope_name(0).split('.')[-1].strip() == 'd3-basic':
+        if view.scope_name(0).split('.')[-1].strip() in ['d3-basic', 'qm-basic', 'jbase-basic']:
             view.run_command('accu_term_release')
     
 
