@@ -21,7 +21,7 @@
 				},
 				{
 					"caption": "Settings - User",
-					"command": "edit_syntax_settings", "args":
+					"command": "edit_settings", "args":
 					{
 						"base_file": "${packages}/AccuTermClient/AccuTermClient.sublime-settings",
 						"user_file": "${packages}/User/AccuTermClient.sublime-settings",
