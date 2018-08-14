@@ -31,8 +31,8 @@ def connect(panel_name='AccuTermClient'):
 def check_error_message(window, mv_svr, success_msg='Success'):
     if mv_svr.LastErrorMessage:
         log_output(window, str(mv_svr.LastError) + " " + mv_svr.LastErrorMessage)
-        log_output(window, 'Connection Failed', panel_name)
-        return None
+        # log_output(window, 'Connection Failed', panel_name)
+        # return None
         return False
     else:
         log_output(window, success_msg)
