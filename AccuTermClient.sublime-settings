@@ -19,9 +19,9 @@
 		"QM": " A0 COL-HDR-SUPP ID-SUPP NOPAGE COUNT.SUP"
 	},
 	"syntax_file_locations": {
-		"JB": "Packages/MVBasic-Syntax/jbase/jbase-basic.sublime-syntax",
-		"PICK": "Packages/MVBasic-Syntax/d3/d3-basic.sublime-syntax",
-		"QM": "Packages/MVBasic-Syntax/qm/qm-basic.sublime-syntax"
+		"JB": "Packages/MultiValue BASIC/jbase/jbase-basic.sublime-syntax",
+		"PICK": "Packages/MultiValue BASIC/d3/d3-basic.sublime-syntax",
+		"QM": "Packages/MultiValue BASIC/qm/qm-basic.sublime-syntax"
 	}
 
 }
