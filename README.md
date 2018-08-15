@@ -72,13 +72,10 @@ The settings can be accessed in the Preferences>Package Settings>AccuTermClient>
 
 # Todo
 * Add more event listener functions (automatic check for changes on server)
-* Allow user to set default file ext. for MV source code.
-* Document settings (what they do, how to change).
 * Add support for jBASE windows.
 * Autofill execute command with selected text.
 * Add ability to run multiple commands at once and view the output.
 * Enable custom compile compile commands to allow multiple commands (like BASIC %FILE %ITEM & COMPILE %FILE %ITEM)
 * Add setting to disable automatic locking of items when downloaded.
-* Change the get_setting_for_host function to ignore the host DBMS key if not present (ex. set a single value to the result_line_regex when only one DBMS type is worked with). This will make custom configs easier.
 * Set MV syntax automatically based on DBMS type and file contents (ex. PQ in line 1 should set PROC).
 * Allow file extensions to be set based on DBMS type and file contents (ex. PQ in line 1 should set proc ext.).
