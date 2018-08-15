@@ -270,6 +270,41 @@ class AccuTermExecute(sublime_plugin.TextCommand):
     def input(self, args):
         return ExecuteInputHandler(self.view)
 
+    def run(self, edit, output_to='console', command=None): 
+        self.command = command
+        self.command_view = self.view
+
+        def append():
+            self.command_view.run_command('append', {'characters': self.run_commands(self.command)})
+            self.command_view.run_command("accu_term_execute", {"output_to": "append"} )
+
+        def log():
+            log_output(self.command_view.window(), '')
+            log_output(self.command_view.window(), self.run_commands(self.command) )
+
+        if not(command):
+            self.view.window().show_input_panel('Enter command', '', lambda command: 
+                self.view.run_command("accu_term_execute", {"output_to": output_to, "command": command} ), 
+                None, None)
+
+        elif output_to == 'new':
+            new_view = self.view.window().new_file()
+            new_view.set_name(command)
+            new_view.set_scratch(True)
+            self.command_view = new_view
+            sublime.set_timeout_async(append, 0)
+
+        elif output_to == 'append':
+            sublime.set_timeout_async(append, 0)
+
+        elif output_to == 'replace':
+            self.view.set_name(command)
+            self.view.replace(edit, sublime.Region(0, self.view.size()), '')
+            sublime.set_timeout_async(append, 0)
+
+        else: # output to console
+            sublime.set_timeout_async(log, 0)
+
     def run_commands(self, commands):
         results = ''
         mv_svr = connect()
@@ -280,35 +315,6 @@ class AccuTermExecute(sublime_plugin.TextCommand):
                 results += mv_svr.Execute(command, '', 1).replace('\x1b', '').replace(os.linesep, '\n') + '\n\n'
                 check_error_message(self.view.window(), mv_svr, '')
         return results
-
-    def run(self, edit, output_to='console', command=None): 
-        if not(command):
-            self.view.window().show_input_panel('Enter command', '', lambda command: 
-                self.view.run_command("accu_term_execute", {"output_to": output_to, "command": command} ), 
-                None, None)
-
-        elif output_to == 'new':
-            new_view = self.view.window().new_file()
-            new_view.set_name(command)
-            new_view.run_command('append', {"characters": self.run_commands(command)})
-            new_view.set_scratch(True)
-            new_view.run_command("accu_term_execute", {"output_to": "append"} )
-            self.view.window().show_input_panel('Enter command', '', lambda command: 
-                new_view.run_command("accu_term_execute", {"output_to": "append", "command": command} ), 
-                None, None)
-
-        elif output_to == 'append':
-            self.view.run_command('append', {"characters": self.run_commands(command)})
-            self.view.window().show_input_panel('Enter command', '', lambda command: 
-                self.view.run_command("accu_term_execute", {"output_to": "append", "command": command} ), 
-                None, None)
-
-        elif output_to == 'replace':
-            self.view.set_name(command)
-            self.view.replace(edit, sublime.Region(0, self.view.size()), self.run_commands(command))
-
-        else:
-            log_output(self.view.window(), self.run_commands(command) )
 
 
 class AccuTermUnlock(sublime_plugin.WindowCommand):
