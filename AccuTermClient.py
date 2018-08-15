@@ -362,13 +362,18 @@ class AccuTermListCommand(sublime_plugin.WindowCommand):
                 self.list = ''.join(self.mv_svr.Execute('SORT ' + self.mv_file + ' A0 COL-HDR-SUPP ID-SUPP NOPAGE COUNT.SUP', '', 1)).split('\r\n')
             else:
                 self.list = ''.join(self.mv_svr.Execute('SORT ' + self.mv_file + ' A0 COL-HDR-SUPP ID-SUPP NOPAGE NI-SUPP', '', 1)).split('\r\n')
+            self.list.insert(0, '..')
             self.window.show_quick_panel(self.list, self.pickItem)
 
     def pickItem(self, item_index):
-        if item_index > -1:
+        if item_index == 0:
+            self.run()
+        elif item_index > -1:
             mv_file = self.mv_file
             mv_item = self.list[item_index]
             download(self.window, mv_file, mv_item)
+        else:
+            print(item_index)
 
 class AccuTermLockCommand(sublime_plugin.TextCommand):
     def run(self, edit):

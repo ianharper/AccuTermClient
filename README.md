@@ -82,4 +82,3 @@ The settings can be accessed in the Preferences>Package Settings>AccuTermClient>
 * Change the get_setting_for_host function to ignore the host DBMS key if not present (ex. set a single value to the result_line_regex when only one DBMS type is worked with). This will make custom configs easier.
 * Set MV syntax automatically based on DBMS type and file contents (ex. PQ in line 1 should set PROC).
 * Allow file extensions to be set based on DBMS type and file contents (ex. PQ in line 1 should set proc ext.).
-* Enable "up" navigation in the List command (Type ".." when browsing items to go back to the file list).
