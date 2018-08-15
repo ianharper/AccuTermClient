@@ -275,10 +275,12 @@ class AccuTermExecute(sublime_plugin.TextCommand):
         self.command_view = self.view
 
         def append():
+            if threading.currentThread().getName() != 'MainThread': pythoncom.CoInitialize()
             self.command_view.run_command('append', {'characters': self.run_commands(self.command)})
             self.command_view.run_command("accu_term_execute", {"output_to": "append"} )
 
         def log():
+            if threading.currentThread().getName() != 'MainThread': pythoncom.CoInitialize()
             log_output(self.command_view.window(), '')
             log_output(self.command_view.window(), self.run_commands(self.command) )
 
