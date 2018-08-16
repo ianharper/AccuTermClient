@@ -273,7 +273,8 @@ class AccuTermExecute(sublime_plugin.TextCommand):
     def run(self, edit, output_to='console', command=None): 
         self.command = command
         self.command_view = self.view
-
+        if self.view.window() == None: output_to = 'console'
+        
         def append():
             if threading.currentThread().getName() != 'MainThread': pythoncom.CoInitialize()
             self.command_view.run_command('append', {'characters': self.run_commands(self.command)})
@@ -281,8 +282,9 @@ class AccuTermExecute(sublime_plugin.TextCommand):
 
         def log():
             if threading.currentThread().getName() != 'MainThread': pythoncom.CoInitialize()
-            log_output(self.command_view.window(), '')
-            log_output(self.command_view.window(), self.run_commands(self.command) )
+            window = self.command_view.window() if bool(self.command_view.window()) else sublime.active_window()
+            log_output(window, '\n')
+            log_output(window, self.run_commands(self.command) )
 
         if not(command):
             self.view.window().show_input_panel('Enter command', '', lambda command: 
@@ -380,8 +382,6 @@ class AccuTermListCommand(sublime_plugin.WindowCommand):
             mv_file = self.mv_file
             mv_item = self.list[item_index]
             download(self.window, mv_file, mv_item)
-        else:
-            print(item_index)
 
 class AccuTermLockCommand(sublime_plugin.TextCommand):
     def run(self, edit):
