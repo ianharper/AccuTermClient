@@ -11,7 +11,7 @@ AccuTerm client for Sublime Text.
 * Execute commands on the MV Server and display ouput in Sublime
 * Global case change (preserves case in comments & strings)
 
-### Extended Features - Limited availablity without additional configuration 
+### Extended Features - Limited availability without additional configuration 
 These features require DBMS specific configuration to run. D3, QM, and jBASE are configured automatically. Additional DBMS can be setup manually (see the _Settings_ section below).
 
 * Compile source code
