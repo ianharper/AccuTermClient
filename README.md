@@ -8,7 +8,7 @@ AccuTerm client for Sublime Text.
 * Lock/Unlock items on the MultiValue server
 * Iconv/Oconv from Sublime
 * Run currently open file 
-* Execute commands on the MV Server and display ouput in Sublime
+* Execute commands on the MV Server and display output in Sublime
 * Global case change (preserves case in comments & strings)
 
 ### Extended Features - Limited availability without additional configuration 
