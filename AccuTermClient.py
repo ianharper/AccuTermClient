@@ -53,7 +53,8 @@ def get_setting_for_host(mv_svr, setting_name):
 
 
 def get_file_item(file_name):
-    if type(file_name) == sublime.View: file_name = file_name.file_name()
+    if type(file_name) == sublime.View: 
+        file_name = os.sep.join(file_name.settings().get('AccuTermClient_mv_file_item', [file_name.file_name()]))
     mv_file   = file_name.split(os.sep)[-2]
     mv_item   = file_name.split(os.sep)[-1] 
     remove_file_ext = sublime.load_settings('AccuTermClient.sublime-settings').get('remove_file_extensions')
@@ -90,6 +91,7 @@ def download(window, mv_file, mv_item):
                         if host_type in mv_syntaxes: new_view.set_syntax_file(mv_syntaxes[host_type])
                     else: 
                         new_view = window.open_file(file_name)
+                    new_view.settings().set('AccuTermClient_mv_file_item', [mv_file, mv_item])
                     new_view.run_command('accu_term_replace_file', {"text": data})
             else: 
                 log_output(window, mv_file + ' ' + mv_item + ' not found.')
