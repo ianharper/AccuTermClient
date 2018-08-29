@@ -287,7 +287,8 @@ class AccuTermExecute(sublime_plugin.TextCommand):
             log_output(window, self.run_commands(self.command) )
 
         if not(command):
-            self.view.window().show_input_panel('Enter command', '', lambda command: 
+            initial_text = self.view.substr(self.view.sel()[0])
+            self.view.window().show_input_panel('Enter command', initial_text, lambda command: 
                 self.view.run_command("accu_term_execute", {"output_to": output_to, "command": command} ), 
                 None, None)
 
