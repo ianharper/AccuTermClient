@@ -91,7 +91,6 @@ def download(window, mv_file, mv_item):
                         if host_type in mv_syntaxes: new_view.set_syntax_file(mv_syntaxes[host_type])
                     else: 
                         new_view = window.open_file(file_name)
-                    new_view.settings().set('AccuTermClient_mv_file_item', [mv_file, mv_item])
                     new_view.run_command('accu_term_replace_file', {"text": data})
                     if new_view.substr(sublime.Region(0,2)).upper() == 'PQ':
                         new_view.set_syntax_file(mv_syntaxes['PROC'])
@@ -101,12 +100,20 @@ def download(window, mv_file, mv_item):
     else:
         log_output(window, 'Invalid Input: ' + str(mv_file) + ' ' + str(mv_item) + ' (Must be [file] [item])')
 
+def upload(view, mv_svr=connect()):
+    (mv_file, mv_item) = get_file_item(view)
+    data = view.substr( sublime.Region(0, view.size()) ).replace('\n', '\xFE')
+    if mv_svr.IsConnected():
+        mv_svr.WriteItem(mv_file, mv_item, data, 0, 0, 0, 1)
+        check_error_message(view.window(), mv_svr, 'Uploaded to ' + mv_file + ' ' + mv_item)
+    return mv_svr.LastError
+
+
 class AccuTermUploadCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
+    def run(self, edit, mv_svr=connect()):
         (mv_file, mv_item) = get_file_item(self.view)
         data = self.view.substr( sublime.Region(0, self.view.size()) ).replace('\n', '\xFE')
-        mv_svr = connect()
-        if mv_svr:
+        if mv_svr.IsConnected():
             mv_svr.WriteItem(mv_file, mv_item, data, 0, 0, 0, 1)
             check_error_message(self.view.window(), mv_svr, 'Uploaded to ' + mv_file + ' ' + mv_item)
 
@@ -125,26 +132,35 @@ class AccuTermCompileCommand(sublime_plugin.WindowCommand):
         return result_line_regex
 
     def run(self, **kwargs):
+        self.window.destroy_output_panel('exec')
         self.view = self.window.active_view()
-        if self.view.is_dirty(): self.view.run_command('save')
+        if self.view.is_dirty() and bool(self.view.file_name): self.view.run_command('save')
         data = self.view.substr(sublime.Region(0, self.view.size())).replace('\n', '\xFE')        
         sublime.set_timeout_async( lambda: self.upload(self, data = data), 0)
 
     def upload(self, *args, data=None):
         if threading.currentThread ().getName() != 'MainThread':
            pythoncom.CoInitialize ()
-        file_name = self.view.file_name()
-        (mv_file, mv_item) = get_file_item(self.view)
-        panel = self.window.create_output_panel('exec', False)
-        self.panel = panel
 
         mv_svr = connect()
+        if upload(self.view, mv_svr): 
+            log_output(self.window, mv_svr.LastErrorMessage, 'exec')
+            return
+
+        file_name = self.view.file_name() if self.view.file_name() else self.view.name()
+        (mv_file, mv_item) = get_file_item(self.view)
+
+
+        panel = self.window.create_output_panel('exec', False)
+        panel.settings().set('AccuTermClient_saved_locally', bool(self.view.file_name()))
+        self.panel = panel
+
         if mv_svr.IsConnected():
             if panel:
                 panel.settings().set("result_file_regex", r"Compiling:\s(.*)()")
                 panel.settings().set("result_line_regex", self.get_result_line_regex(mv_svr))
+                panel.settings().set("result_base_dir", self.view.settings().get('default_dir'))
 
-            mv_svr.WriteItem(mv_file, mv_item, data, 0, 0, 0, 1)
             if mv_svr.LastErrorMessage:
                 log_output(self.window, mv_svr.LastErrorMessage, 'exec')
             else:
@@ -158,9 +174,8 @@ class AccuTermCompileCommand(sublime_plugin.WindowCommand):
                 if result.split('\n')[-1][:5] == '[241]': 
                     self.window.destroy_output_panel('exec')
                     self.window.status_message(mv_file + ' ' + mv_item + ' compiled')
-                    # self.window.focus_view( self.window.find_open_file(file_name) )
-                # else:
-                #     sublime.active_window().run_command('show_panel', {'panel': 'output.exec'})
+        else:
+            log_output(self.window, 'Not connected to MV server.')
 
 
 class AccuTermReleaseCommand(sublime_plugin.TextCommand):
@@ -442,6 +457,14 @@ class EventListener(sublime_plugin.EventListener):
     def on_pre_close(self, view):
         if view.scope_name(0).split('.')[-1].strip() in ['d3-basic', 'qm-basic', 'jbase-basic']:
             view.run_command('accu_term_release')
+
+    def on_window_command(self, window, command_name, args):
+        if command_name in ['prev_result', 'next_result']:
+            panel = window.find_output_panel('exec')
+            saved_locally = panel.settings().get('AccuTermClient_saved_locally', True)
+            if not saved_locally: 
+                print('disabling prev/next')
+                return ('None', '')
     
 
 class AccuTermRunCommand(sublime_plugin.TextCommand):
