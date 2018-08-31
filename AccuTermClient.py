@@ -77,6 +77,7 @@ def download(window, mv_file, mv_item):
         mv_svr = connect()
         if mv_svr:
             if bool( mv_svr.ItemExists(mv_file, mv_item) ):
+                mv_syntaxes = sublime.load_settings('AccuTermClient.sublime-settings').get('syntax_file_locations', {})
                 mv_svr.UnlockItem(mv_file, mv_item)
                 data = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 1)
                 if check_error_message(window, mv_svr, 'Download success'):
@@ -87,12 +88,13 @@ def download(window, mv_file, mv_item):
                         if not os.path.exists(default_dir): os.makedirs(default_dir)
                         new_view.settings().set('default_dir', default_dir)
                         host_type = getHostType(mv_svr)
-                        mv_syntaxes = sublime.load_settings('AccuTermClient.sublime-settings').get('syntax_file_locations', {})
                         if host_type in mv_syntaxes: new_view.set_syntax_file(mv_syntaxes[host_type])
                     else: 
                         new_view = window.open_file(file_name)
                     new_view.settings().set('AccuTermClient_mv_file_item', [mv_file, mv_item])
                     new_view.run_command('accu_term_replace_file', {"text": data})
+                    if new_view.substr(sublime.Region(0,2)).upper() == 'PQ':
+                        new_view.set_syntax_file(mv_syntaxes['PROC'])
             else: 
                 log_output(window, mv_file + ' ' + mv_item + ' not found.')
             mv_svr.Disconnect()
@@ -289,7 +291,8 @@ class AccuTermExecute(sublime_plugin.TextCommand):
             log_output(window, self.run_commands(self.command) )
 
         if not(command):
-            self.view.window().show_input_panel('Enter command', '', lambda command: 
+            initial_text = self.view.substr(self.view.sel()[0])
+            self.view.window().show_input_panel('Enter command', initial_text, lambda command: 
                 self.view.run_command("accu_term_execute", {"output_to": output_to, "command": command} ), 
                 None, None)
 
