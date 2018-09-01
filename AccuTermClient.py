@@ -91,6 +91,7 @@ def download(window, mv_file, mv_item):
                         if host_type in mv_syntaxes: new_view.set_syntax_file(mv_syntaxes[host_type])
                     else: 
                         new_view = window.open_file(file_name)
+                    new_view.settings().set('AccuTermClient_mv_file_item', [mv_file, mv_item])
                     new_view.run_command('accu_term_replace_file', {"text": data})
                     if new_view.substr(sublime.Region(0,2)).upper() == 'PQ':
                         new_view.set_syntax_file(mv_syntaxes['PROC'])
