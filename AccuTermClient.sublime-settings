@@ -22,6 +22,9 @@
 		"JB": "Packages/MultiValue BASIC/jbase/jbase-basic.sublime-syntax",
 		"PICK": "Packages/MultiValue BASIC/d3/d3-basic.sublime-syntax",
 		"QM": "Packages/MultiValue BASIC/qm/qm-basic.sublime-syntax"
+	},
+	"command_history": {
+		"PICK": ["TS", "@USER"]
 	}
 
 }

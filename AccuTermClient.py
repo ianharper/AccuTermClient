@@ -272,20 +272,6 @@ class AccuTermConv(sublime_plugin.TextCommand):
         return status
 
 
-class ExecuteInputHandler(sublime_plugin.TextInputHandler):
-    def __init__(self, view):
-        self.view = view
-
-    def name(self):
-        return 'command'
-
-    def initial_text(self):
-        if len(self.view.sel()) == 1:
-            return self.view.substr(self.view.sel()[0])
-        else:
-            return ''
-
-
 class AccuTermExecute(sublime_plugin.TextCommand):
     def input(self, args):
         return ExecuteInputHandler(self.view)
@@ -341,6 +327,45 @@ class AccuTermExecute(sublime_plugin.TextCommand):
                 check_error_message(self.view.window(), mv_svr, '')
         return results
 
+
+class ExecuteInputHandler(sublime_plugin.TextInputHandler):
+    def __init__(self, view):
+        self.view = view
+
+    def name(self):
+        return 'command'
+
+    def initial_text(self):
+        if len(self.view.sel()) == 1:
+            return self.view.substr(self.view.sel()[0])
+        else:
+            return ''
+
+    def next_input(self, args):
+        if args['command']:
+            return None
+        else:
+            return ExecuteHistoryInputHandler(self.view)
+
+
+class ExecuteHistoryInputHandler(sublime_plugin.ListInputHandler):
+    def __init__(self, view):
+        self.view = view
+
+    def name(self):
+        return 'command'
+
+    def list_items(self):
+        mv_svr = connect()
+        if mv_svr.IsConnected():
+            mv_file, mv_item = get_setting_for_host(mv_svr, 'command_history')
+            if mv_item == '@USER': mv_item = mv_svr.UserName
+            command_history = mv_svr.ReadItem(mv_file, mv_item)
+            if not mv_svr.LastError:
+                return command_history.replace('\r', '').split('\n')
+        else:
+            return ['']
+        
 
 class AccuTermUnlock(sublime_plugin.WindowCommand):
     def on_done(self, item_ref):
