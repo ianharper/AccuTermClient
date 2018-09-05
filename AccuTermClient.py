@@ -360,9 +360,10 @@ class ExecuteHistoryInputHandler(sublime_plugin.ListInputHandler):
         if mv_svr.IsConnected():
             mv_file, mv_item = get_setting_for_host(mv_svr, 'command_history')
             if mv_item == '@USER': mv_item = mv_svr.UserName
-            command_history = mv_svr.ReadItem(mv_file, mv_item)
+            command_history = mv_svr.ReadItem(mv_file, mv_item).replace('\r', '').replace('\x00', '').split('\n')
+            if getHostType(mv_svr) == 'PICK': command_history = list(reversed(command_history))
             if not mv_svr.LastError:
-                return command_history.replace('\r', '').split('\n')
+                return command_history
         else:
             return ['']
         
