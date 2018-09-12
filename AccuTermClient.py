@@ -84,6 +84,7 @@ def download(window, mv_file, mv_item):
                     if not os.path.exists(file_name): 
                         new_view = window.new_file()
                         new_view.set_name( os.path.split(get_filename(window, mv_file, mv_item))[1] )
+                        new_view.sel().clear()
                         default_dir = get_base_path(window) + os.sep + mv_file
                         if not os.path.exists(default_dir): os.makedirs(default_dir)
                         new_view.settings().set('default_dir', default_dir)
