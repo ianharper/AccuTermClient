@@ -71,6 +71,12 @@ def get_base_path(window=sublime.active_window()):
     base_path = sublime.load_settings('AccuTermClient.sublime-settings').get('default_save_location', '%userprofile%')
     return os.path.dirname(project_file_name) if bool(project_file_name) else base_path
 
+def get_view_lock_state(view):
+    lock_state = view.settings().get('AccuTermClient_lock_state', None)
+    if lock_state == None: 
+        lock_state = 'released' if sublime.load_settings('AccuTermClient.sublime-settings').get('open_with_readu', True) else 'no_locking'
+    return lock_state
+
 def download(window, mv_file, mv_item):
     if bool(mv_file) and bool(mv_item):
         file_name = get_filename(window, mv_file, mv_item)
@@ -78,8 +84,12 @@ def download(window, mv_file, mv_item):
         if mv_svr:
             if bool( mv_svr.ItemExists(mv_file, mv_item) ):
                 mv_syntaxes = sublime.load_settings('AccuTermClient.sublime-settings').get('syntax_file_locations', {})
-                mv_svr.UnlockItem(mv_file, mv_item)
-                data = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 1)
+                readu_flag = sublime.load_settings('AccuTermClient.sublime-settings').get('open_with_readu', True)
+                if readu_flag:
+                    mv_svr.UnlockItem(mv_file, mv_item)
+                    data = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 1)
+                else:
+                    data = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 0)
                 if check_error_message(window, mv_svr, 'Download success'):
                     if not os.path.exists(file_name): 
                         new_view = window.new_file()
@@ -93,6 +103,10 @@ def download(window, mv_file, mv_item):
                     else: 
                         new_view = window.open_file(file_name)
                     new_view.settings().set('AccuTermClient_mv_file_item', [mv_file, mv_item])
+                    if readu_flag:
+                        new_view.settings().set('AccuTermClient_lock_state', 'locked')
+                    else:
+                        new_view.settings().set('AccuTermClient_lock_state', 'no_locking')
                     new_view.run_command('accu_term_replace_file', {"text": data})
                     if new_view.substr(sublime.Region(0,2)).upper() == 'PQ':
                         new_view.set_syntax_file(mv_syntaxes['PROC'])
@@ -106,7 +120,10 @@ def upload(view, mv_svr=connect()):
     (mv_file, mv_item) = get_file_item(view)
     data = view.substr( sublime.Region(0, view.size()) ).replace('\n', '\xFE')
     if mv_svr.IsConnected():
-        mv_svr.WriteItem(mv_file, mv_item, data, 0, 0, 0, 1)
+        if get_view_lock_state(view) == 'locked':
+            mv_svr.WriteItem(mv_file, mv_item, data, 0, 0, 0, 1)
+        else:
+            mv_svr.WriteItem(mv_file, mv_item, data, 0, 0, 0, 0)
         check_error_message(view.window(), mv_svr, 'Uploaded to ' + mv_file + ' ' + mv_item)
     return mv_svr.LastError
 
@@ -116,7 +133,10 @@ class AccuTermUploadCommand(sublime_plugin.TextCommand):
         (mv_file, mv_item) = get_file_item(self.view)
         data = self.view.substr( sublime.Region(0, self.view.size()) ).replace('\n', '\xFE')
         if mv_svr.IsConnected():
-            mv_svr.WriteItem(mv_file, mv_item, data, 0, 0, 0, 1)
+            if get_view_lock_state(self.view) == 'locked':
+                mv_svr.WriteItem(mv_file, mv_item, data, 0, 0, 0, 1)
+            else:
+                mv_svr.WriteItem(mv_file, mv_item, data, 0, 0, 0, 0)
             check_error_message(self.view.window(), mv_svr, 'Uploaded to ' + mv_file + ' ' + mv_item)
 
 
@@ -189,6 +209,7 @@ class AccuTermReleaseCommand(sublime_plugin.TextCommand):
         mv_svr = connect()
         if mv_svr:
             mv_svr.UnlockItem(mv_file, mv_item)
+            if mv_svr.LastError == 0: self.view.settings().set('AccuTermClient_lock_state', 'released')
             check_error_message(self.view.window(), mv_svr, 'Released ' + mv_file + ' ' + mv_item)
 
 
@@ -440,9 +461,13 @@ class AccuTermLockCommand(sublime_plugin.TextCommand):
             if mv_svr.LastError == 260:
                 self.view.window().destroy_output_panel('AccuTermClient')
                 self.view.window().status_message(mv_file + ' ' + mv_item + ' is already locked')
+                self.view.settings().set('AccuTermClient_lock_state', 'locked')
             else :
+                if mv_svr.LastError == 0: 
+                    self.view.settings().set('AccuTermClient_lock_state', 'locked')
+                else:
+                    self.view.settings().set('AccuTermClient_lock_state', 'released')
                 check_error_message(self.view.window(), mv_svr, mv_file + ' ' + mv_item + ' locked')
-            mv_svr.Disconnect()
 
 def changeCase(text, case_funct='upper()'):
     source_code = []
@@ -482,8 +507,8 @@ class AccuTermGlobalDowncase(sublime_plugin.TextCommand):
         
 class EventListener(sublime_plugin.EventListener):
     def on_pre_close(self, view):
-        if view.scope_name(0).split('.')[-1].strip() in ['d3-basic', 'qm-basic', 'jbase-basic']:
-            view.run_command('accu_term_release')
+        lock_state = view.settings().get('AccuTermClient_lock_state', None)
+        if lock_state == 'locked': view.run_command('accu_term_release')
 
     def on_window_command(self, window, command_name, args):
         if command_name in ['prev_result', 'next_result']:
