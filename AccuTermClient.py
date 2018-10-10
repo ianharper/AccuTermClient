@@ -52,11 +52,14 @@ def get_setting_for_host(mv_svr, setting_name):
     return setting_val
 
 
-def get_file_item(file_name):
-    if type(file_name) == sublime.View: 
-        file_name = os.sep.join(file_name.settings().get('AccuTermClient_mv_file_item', [file_name.file_name()]))
-    mv_file   = file_name.split(os.sep)[-2]
-    mv_item   = file_name.split(os.sep)[-1] 
+def get_file_item(view):
+    file_name = os.sep.join(view.settings().get('AccuTermClient_mv_file_item', []))
+    if not bool(file_name): # file item not stored in view settings, get based on file path name.
+        file_name = view.file_name()
+        if file_name == None: # file not saved locally, spoof a file name
+            file_name = ''.join([view.settings().get('default_dir'), os.sep, view.name()])
+    mv_file = file_name.split(os.sep)[-2]
+    mv_item = file_name.split(os.sep)[-1] 
     remove_file_ext = sublime.load_settings('AccuTermClient.sublime-settings').get('remove_file_extensions')
     if os.path.splitext(mv_item.lower())[1][1:] in remove_file_ext: mv_item = os.path.splitext(mv_item)[0]
     return (mv_file, mv_item)
@@ -205,7 +208,7 @@ class AccuTermReleaseCommand(sublime_plugin.TextCommand):
         file_name = self.view.file_name()
         if file_name == None: file_name = os.sep.join([self.view.settings().get('default_dir'), self.view.name()])
         log_output(self.view.window(), file_name)
-        (mv_file, mv_item) = get_file_item(file_name)
+        (mv_file, mv_item) = get_file_item(self.view)
         mv_svr = connect()
         if mv_svr:
             mv_svr.UnlockItem(mv_file, mv_item)
