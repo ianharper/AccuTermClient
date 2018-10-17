@@ -464,6 +464,7 @@ class AccuTermLockCommand(sublime_plugin.TextCommand):
             if mv_svr.LastError == 260:
                 self.view.window().destroy_output_panel('AccuTermClient')
                 self.view.window().status_message(mv_file + ' ' + mv_item + ' is already locked')
+                # self.view.window().status_message(mv_svr.LastErrorMessage)
                 self.view.settings().set('AccuTermClient_lock_state', 'locked')
             else :
                 if mv_svr.LastError == 0: 
@@ -520,7 +521,12 @@ class EventListener(sublime_plugin.EventListener):
             if not saved_locally: 
                 print('disabling prev/next')
                 return ('None', '')
-    
+
+def plugin_loaded():
+    for view in sublime.active_window().views():
+        if 'locked' == get_view_lock_state(view):
+            view.run_command('accu_term_lock')
+
 
 class AccuTermRunCommand(sublime_plugin.TextCommand):
     def run(self, edit):
