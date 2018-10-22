@@ -80,6 +80,21 @@ def get_view_lock_state(view):
         lock_state = 'released' if sublime.load_settings('AccuTermClient.sublime-settings').get('open_with_readu', True) else 'no_locking'
     return lock_state
 
+def find_view(view_name):
+    # Find view based on full filename
+    for window in sublime.windows():
+        if window.find_open_file(view_name): 
+            return window.find_open_file(view_name)
+
+    # If view hasn't been found search based on view name.
+    view_name = os.path.basename(view_name)
+    for window in sublime.windows():
+        for view in window.views():
+            if view.name() == view_name: 
+                return view
+    return None
+
+
 def download(window, mv_file, mv_item):
     if bool(mv_file) and bool(mv_item):
         file_name = get_filename(window, mv_file, mv_item)
@@ -94,7 +109,8 @@ def download(window, mv_file, mv_item):
                 else:
                     data = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 0)
                 if check_error_message(window, mv_svr, 'Download success'):
-                    if not os.path.exists(file_name): 
+                    new_view = find_view(file_name)
+                    if new_view == None:
                         new_view = window.new_file()
                         new_view.set_name( os.path.split(get_filename(window, mv_file, mv_item))[1] )
                         new_view.sel().clear()
@@ -103,8 +119,6 @@ def download(window, mv_file, mv_item):
                         new_view.settings().set('default_dir', default_dir)
                         host_type = getHostType(mv_svr)
                         if host_type in mv_syntaxes: new_view.set_syntax_file(mv_syntaxes[host_type])
-                    else: 
-                        new_view = window.open_file(file_name)
                     new_view.settings().set('AccuTermClient_mv_file_item', [mv_file, mv_item])
                     if readu_flag:
                         new_view.settings().set('AccuTermClient_lock_state', 'locked')
