@@ -120,6 +120,7 @@ def download(window, mv_file, mv_item):
                         host_type = getHostType(mv_svr)
                         if host_type in mv_syntaxes: new_view.set_syntax_file(mv_syntaxes[host_type])
                     new_view.settings().set('AccuTermClient_mv_file_item', [mv_file, mv_item])
+                    new_view.settings().set('AccuTermClient_sync_skip', 'check')
                     if readu_flag:
                         new_view.settings().set('AccuTermClient_lock_state', 'locked')
                     else:
@@ -142,7 +143,33 @@ def upload(view, mv_svr=connect()):
         else:
             mv_svr.WriteItem(mv_file, mv_item, data, 0, 0, 0, 0)
         check_error_message(view.window(), mv_svr, 'Uploaded to ' + mv_file + ' ' + mv_item)
+        view.settings().set('AccuTermClient_sync_state', 'check')
     return mv_svr.LastError
+
+
+def check_sync(view):
+    # todo: some kind of settting should be checked here to make sure that the view hasn't been changed since it was loaded.
+    # sync states:
+    #   check - proceed with sync on load. When the local copy is changed set to changed.
+    #   skip  - item just downloaded. Change state to check and return. When the local copy is changed set to changed.
+    #   changed - Local copy has changed, do not check. On upload set this to check.
+    #   None  - do not check.
+    sync_state = view.settings().get('AccuTermClient_sync_state')
+    if sync_state == None or sync_state == 'changed':
+        return
+    elif sync_state == 'skip':
+        view.settings().set('AccuTermClient_sync_state', 'check')
+    elif sync_state == 'check':
+        (mv_file, mv_item) = get_file_item(view)
+        mv_svr = connect()
+        if mv_svr.IsConnected() and bool( mv_svr.ItemExists(mv_file, mv_item) ):
+            data_mv = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 0).replace('\r', '')
+            data_local = view.substr( sublime.Region(0, view.size()) )
+            if data_mv != data_local:  
+                prompt = mv_file + ' ' + mv_item + ' has changed on the MV server. Do you want to download a fresh copy?'
+                if sublime.ok_cancel_dialog(prompt, 'Download'):
+                    view.run_command('accu_term_refresh')
+
 
 
 class AccuTermUploadCommand(sublime_plugin.TextCommand):
@@ -425,12 +452,8 @@ class AccuTermUnlock(sublime_plugin.WindowCommand):
 
 class AccuTermRefreshCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        file_name = self.view.file_name()
-        if bool(file_name):
-            (mv_file, mv_item) = get_file_item(self.view)
-            download(self.view.window(), mv_file, mv_item)
-        else:
-            log_output(self.view.window(), 'Unable to determine MV file reference. Make sure this file is saved locally first.')
+        (mv_file, mv_item) = get_file_item(self.view)
+        download(self.view.window(), mv_file, mv_item)
 
 
 class AccuTermListCommand(sublime_plugin.WindowCommand):
@@ -536,10 +559,26 @@ class EventListener(sublime_plugin.EventListener):
                 print('disabling prev/next')
                 return ('None', '')
 
+class AccuTermClientLoadListener(sublime_plugin.ViewEventListener):
+    def is_applicable(settings):
+        if settings.get('AccuTermClient_sync_state') == None:
+            return False
+        else:
+            return True
+
+    def applies_to_primary_view_only():
+        return True
+
+    def on_load_async():
+        check_sync(self.view)
+
+
+
 def plugin_loaded():
     for view in sublime.active_window().views():
         if 'locked' == get_view_lock_state(view):
             view.run_command('accu_term_lock')
+            check_sync(view)
 
 
 class AccuTermRunCommand(sublime_plugin.TextCommand):
