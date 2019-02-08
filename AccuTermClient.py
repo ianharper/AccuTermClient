@@ -1,3 +1,6 @@
+# Package: AccuTermClient
+# A Sublime Text client for the AccuTerm server (from AccuTerm terminal emulator).
+
 import sublime
 import sublime_plugin
 import Pywin32.setup
@@ -7,7 +10,16 @@ import threading
 import pythoncom
 import re
 
-
+# Function: log_output
+# Displays text in an output panel.
+# 
+# Parameters:
+#   window - The Sublime window object that will hold the ouput panel.
+#   output_text - String containing the text to show in the output panel.
+#   panel_name - Name of the output panel (defaults to "AccuTermClient").
+# 
+# Returns:
+#   None
 def log_output(window, output_text, panel_name='AccuTermClient'):
     output_text = output_text.replace('\r', '')
     panel = window.find_output_panel(panel_name)
@@ -18,6 +30,14 @@ def log_output(window, output_text, panel_name='AccuTermClient'):
     window.run_command('show_panel', {'panel': 'output.' + panel_name})
 
 
+# Function: connect
+# Connects to an AccuTerm session running the FTSERVER and returns the AccuTerm Server object. 
+# 
+# Parameters:
+#   panel_name - Name of the output panel to send error messages to (Defaults to AccuTermClient).
+# 
+# Returns:
+#   object - AccuTerm Server object.
 def connect(panel_name='AccuTermClient'):
     mv_svr = Dispatch('atMVSvr71.Server')
     if mv_svr.Connect():
@@ -28,6 +48,18 @@ def connect(panel_name='AccuTermClient'):
     return mv_svr
 
 
+# Function: check_error_message
+# Checks an AccuTerm Server object for errors resulting from a previous command. 
+# If errors are found the error message is sent to an output panel otherwise the status bar
+# will show a success message.
+# 
+# Parameters:
+#   window - The Sublime window object that will hold the ouput panel.
+#   mv_svr - AccuTerm server object (see <connect>).
+#   success_msg - Message to show in status bar if command was successful (defaults to "Success").
+# 
+# Returns:
+#   bool - True for success, False if an error was found.
 def check_error_message(window, mv_svr, success_msg='Success'):
     if mv_svr.LastErrorMessage:
         log_output(window, str(mv_svr.LastError) + " " + mv_svr.LastErrorMessage)
@@ -40,9 +72,26 @@ def check_error_message(window, mv_svr, success_msg='Success'):
         window.status_message(success_msg)
         return True
 
+# Function: getHostType
+# Get the MultiValue host from an AccuTerm server object.
+# 
+# Parameters:
+#   mv_svr - AccuTerm server object (see <connect>).
+# 
+# Returns:
+#   string - MultiValue host type.
 def getHostType(mv_svr):
     return mv_svr.Readitem('ACCUTERMCTRL', 'KMTCFG', 51)
 
+# Function:get_setting_for_host
+# Gets a setting from the AccuTermClient Sublime settings based on the MV host type.
+# 
+# Parameters:
+#   mv_svr - AccuTerm server object (see <connect>).
+#   setting_name - Setting name as a string.
+# 
+# Returns:
+#   string - Setting value.
 def get_setting_for_host(mv_svr, setting_name):
     host_type = sublime.load_settings('AccuTermClient.sublime-settings').get('host_type', 'auto')
     if host_type.lower() == 'auto': host_type = getHostType(mv_svr)
@@ -51,7 +100,16 @@ def get_setting_for_host(mv_svr, setting_name):
         if host_type in setting_val: setting_val = setting_val[host_type]
     return setting_val
 
-
+# Function: get_file_item
+# Gets the file item reference from a passed Sublime view object.
+# 
+# Parameters:
+#   view - Sublime view object.
+# 
+# Returns:
+#   tuple - [0] MV filename.
+# 
+#           [1] MV item
 def get_file_item(view):
     file_name = os.sep.join(view.settings().get('AccuTermClient_mv_file_item', []))
     if not bool(file_name): # file item not stored in view settings, get based on file path name.
@@ -64,24 +122,66 @@ def get_file_item(view):
     if os.path.splitext(mv_item.lower())[1][1:] in remove_file_ext: mv_item = os.path.splitext(mv_item)[0]
     return (mv_file, mv_item)
 
+
+# Function: get_filename
+# Get the windows pathname from the MV file item reference.
+# 
+# Parameters:
+#   window - Sublime window object.
+#   mv_file - MV file string.
+#   mv_item - MV item string.
+# 
+# Returns:
+#   string - Windows pathname.
 def get_filename(window, mv_file, mv_item):
     file_ext = sublime.load_settings('AccuTermClient.sublime-settings').get('default_file_extension', 'bp')
     if file_ext != '': file_ext = '.' + file_ext
     return os.sep.join([get_base_path(window), mv_file, mv_item + file_ext])
 
+
+# Function: get_base_path
+# Gets the base pathname froM a Sublime window object.
+# 
+# Parameters:
+#   window - Sublime window object.
+# 
+# Returns:
+#   string - Windows pathname.
 def get_base_path(window=sublime.active_window()):
     project_file_name = window.project_file_name()
     base_path = sublime.load_settings('AccuTermClient.sublime-settings').get('default_save_location', '%userprofile%')
     return os.path.dirname(project_file_name) if bool(project_file_name) else base_path
 
+
+# Function: get_view_lock_state
+# Get the lock state of a MV item from the corresponding Sublime view.
+# 
+# Parameters:
+#   view - Sublime view object.
+# 
+# Returns:
+#   string - lock state.
+# 
+# Lock States:
+#   locked - Item is locked on the MV server.
+#   released - Item is not locked on MV server.
+#   no_locking - Item was not opened with locking.
 def get_view_lock_state(view):
     lock_state = view.settings().get('AccuTermClient_lock_state', None)
     if lock_state == None: 
         lock_state = 'released' if sublime.load_settings('AccuTermClient.sublime-settings').get('open_with_readu', True) else 'no_locking'
     return lock_state
 
+
+# Function: find_view
+# Find view based on full filename or view name.
+# 
+# Parameters:
+#   view_name - string.
+# 
+# Returns:
+#   view - Sublime view object.
 def find_view(view_name):
-    # Find view based on full filename
     for window in sublime.windows():
         if window.find_open_file(view_name): 
             return window.find_open_file(view_name)
@@ -94,7 +194,16 @@ def find_view(view_name):
                 return view
     return None
 
-
+# Function: download
+# Download item from MV server into a Sublime view.
+# 
+# Parameters:
+#   window - Sublime window object.
+#   mv_file - Filename on MV server.
+#   mv_item - Item ID on MV server.
+# 
+# Returns:
+#   None
 def download(window, mv_file, mv_item):
     if bool(mv_file) and bool(mv_item):
         file_name = get_filename(window, mv_file, mv_item)
@@ -133,6 +242,16 @@ def download(window, mv_file, mv_item):
     else:
         log_output(window, 'Invalid Input: ' + str(mv_file) + ' ' + str(mv_item) + ' (Must be [file] [item])')
 
+
+# Function: upload
+# Upload the contents of a view to the MV server.
+# 
+# Parameters:
+#   view - Sublime view object.
+#   mv_server - AccuTerm server object (optional).
+# 
+# Returns:
+#   string - Error message, empty for success.
 def upload(view, mv_svr=connect()):
     (mv_file, mv_item) = get_file_item(view)
     data = view.substr( sublime.Region(0, view.size()) ).replace('\n', '\xFE')
@@ -145,6 +264,8 @@ def upload(view, mv_svr=connect()):
     return mv_svr.LastError
 
 
+# Class: AccuTermUploadCommand
+# Upload the current view to the MV server.
 class AccuTermUploadCommand(sublime_plugin.TextCommand):
     def run(self, edit, mv_svr=connect()):
         (mv_file, mv_item) = get_file_item(self.view)
@@ -157,6 +278,8 @@ class AccuTermUploadCommand(sublime_plugin.TextCommand):
             check_error_message(self.view.window(), mv_svr, 'Uploaded to ' + mv_file + ' ' + mv_item)
 
 
+# Class: AccuTermCompileCommand
+# Compile the current view on the MV server.
 class AccuTermCompileCommand(sublime_plugin.WindowCommand):
     view = None
 
@@ -217,6 +340,8 @@ class AccuTermCompileCommand(sublime_plugin.WindowCommand):
             log_output(self.window, 'Not connected to MV server.')
 
 
+# Class: AccuTermReleaseCommand
+# Release the lock on the MV server corresponding to the current view.
 class AccuTermReleaseCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         file_name = self.view.file_name()
@@ -230,7 +355,15 @@ class AccuTermReleaseCommand(sublime_plugin.TextCommand):
             check_error_message(self.view.window(), mv_svr, 'Released ' + mv_file + ' ' + mv_item)
 
 
+# Class: AccuTermReplaceFileCommand
+# Replace the contents of the current view with text. Used internally to replace contents of a view
+# with data from the MV server.
 class AccuTermReplaceFileCommand(sublime_plugin.TextCommand):
+    # Function: run
+    # Parameters:
+    #   self - Sublime TextCommand instance.
+    #   edit - Sublime edit object.
+    #   text - string
     def run(self, edit, text=''):
         if self.view.is_loading():
             sublime.set_timeout_async(lambda: self.view.run_command('accu_term_replace_file', {"text": text}), 100)
@@ -239,7 +372,15 @@ class AccuTermReplaceFileCommand(sublime_plugin.TextCommand):
             self.view.replace(edit, sublime.Region(0, self.view.size()), text)
 
 
+# Class: AccuTermDownload
+# Download an item from the MV server.
 class AccuTermDownload(sublime_plugin.WindowCommand):
+    # Function: on_done
+    # Run the <Download> function with the mv file item reference.
+    # 
+    # Parameters:
+    #   self
+    #   item_ref - string
     def on_done(self, item_ref):
         item_ref = item_ref.split()
         if len(item_ref) == 2:
@@ -248,10 +389,13 @@ class AccuTermDownload(sublime_plugin.WindowCommand):
         else:
             log_output(self.window, 'Invalid Input: ' + ' '.join(item_ref) + ' (Must be [file] [item])')
 
+    # Function: run
+    # Show a Sublime input panel to get the MV file item reference.
     def run(self, **kwargs):
         self.window.show_input_panel('Enter the MV file and item', '', self.on_done, None, None)
 
 
+# Class: ConvDataInputHandler
 class ConvDataInputHandler(sublime_plugin.TextInputHandler):
     def __init__(self, view):
         self.view = view
@@ -272,6 +416,7 @@ class ConvDataInputHandler(sublime_plugin.TextInputHandler):
         return ConvCodeInputHandler(self.view, args)
 
 
+# Class: ConvCodeInputHandler
 class ConvCodeInputHandler(sublime_plugin.TextInputHandler):
     def __init__(self, view, args):
         self.view = view
@@ -293,6 +438,8 @@ class ConvCodeInputHandler(sublime_plugin.TextInputHandler):
         return text
 
 
+# Class: AccuTermConv
+# Convert data using MV processing codes on the MV server.
 class AccuTermConv(sublime_plugin.TextCommand):
     def input(self, args):
         return ConvDataInputHandler(self.view)
@@ -311,6 +458,13 @@ class AccuTermConv(sublime_plugin.TextCommand):
         return status
 
 
+# Class: AccuTermExecute
+# Execute a command on the MV server specifying the output destination:
+# 
+#   new - Create a new view with the output.
+#   append - Append the output to the current view.
+#   replace - Replace the current view with the output.
+#   console - Append the output to the console.
 class AccuTermExecute(sublime_plugin.TextCommand):
     def input(self, args):
         return ExecuteInputHandler(self.view)
@@ -367,6 +521,7 @@ class AccuTermExecute(sublime_plugin.TextCommand):
         return results
 
 
+# Class: ExecuteInputHandler
 class ExecuteInputHandler(sublime_plugin.TextInputHandler):
     def __init__(self, view):
         self.view = view
@@ -387,6 +542,7 @@ class ExecuteInputHandler(sublime_plugin.TextInputHandler):
             return ExecuteHistoryInputHandler(self.view)
 
 
+# Class: ExecuteHistoryInputHandler
 class ExecuteHistoryInputHandler(sublime_plugin.ListInputHandler):
     def __init__(self, view):
         self.view = view
@@ -406,6 +562,8 @@ class ExecuteHistoryInputHandler(sublime_plugin.ListInputHandler):
             return ['']
         
 
+# Class: AccuTermUnlock
+# Unlock an item on the MV server by specifying the file item reference.
 class AccuTermUnlock(sublime_plugin.WindowCommand):
     def on_done(self, item_ref):
         item_ref = item_ref.split()
@@ -423,6 +581,8 @@ class AccuTermUnlock(sublime_plugin.WindowCommand):
         self.window.show_input_panel('Enter the MV file and item', '', self.on_done, None, None)
 
 
+# Class: AccuTermRefreshCommand
+# Update the current view with the item from the MV server and lock the item on the server.
 class AccuTermRefreshCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         file_name = self.view.file_name()
@@ -433,6 +593,8 @@ class AccuTermRefreshCommand(sublime_plugin.TextCommand):
             log_output(self.view.window(), 'Unable to determine MV file reference. Make sure this file is saved locally first.')
 
 
+# Class: AccuTermListCommand
+# Browse files on MV server using Sublime quick panels.
 class AccuTermListCommand(sublime_plugin.WindowCommand):
     def run(self, **kwargs):
         self.mv_svr = connect()
@@ -468,6 +630,9 @@ class AccuTermListCommand(sublime_plugin.WindowCommand):
             mv_item = self.list[item_index]
             download(self.window, mv_file, mv_item)
 
+
+# Class: AccuTermLockCommand
+# Lock an item on the MV server with a supplied file item reference.
 class AccuTermLockCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         file_name = self.view.file_name()
@@ -513,16 +678,25 @@ def changeCase(text, case_funct='upper()'):
         source_code.append(line)
     return '\n'.join(source_code)
 
+
+# Class: AccuTermGlobalUpcase
+# Convert all text in current view to uppercase except text in string quotes and comments.
 class AccuTermGlobalUpcase(sublime_plugin.TextCommand):
     def run(self, edit):
         source_upcase = changeCase( self.view.substr(sublime.Region(0, self.view.size())), 'upper')
         sublime.set_timeout_async(lambda: self.view.run_command('accu_term_replace_file', {"text": source_upcase}), 0)
 
+
+# Class: AccuTermGlobalDowncase
+# Convert all text in current view to lowercase except text in string quotes and comments.
 class AccuTermGlobalDowncase(sublime_plugin.TextCommand):
     def run(self, edit):       
         source_upcase = changeCase( self.view.substr(sublime.Region(0, self.view.size())), 'lower')
         self.view.run_command('accu_term_replace_file', {"text": source_upcase})        
-        
+
+
+# Class: EventListener        
+# Register event handlers.
 class EventListener(sublime_plugin.EventListener):
     def on_pre_close(self, view):
         lock_state = view.settings().get('AccuTermClient_lock_state', None)
@@ -542,6 +716,8 @@ def plugin_loaded():
             view.run_command('accu_term_lock')
 
 
+# Class: AccuTermRunCommand
+# Run the currently open file. If the item is in the MD/VOC then the item name will be used to run (enables running PROC, PARAGRAPH, or MACRO commands).
 class AccuTermRunCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         file_name = self.view.file_name()

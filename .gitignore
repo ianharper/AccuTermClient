@@ -1,3 +1,5 @@
 
 *.sublime-workspace
 *.sublime-project
+doc_config/
+documentation/
