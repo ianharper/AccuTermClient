@@ -1,4 +1,5 @@
 {
+	"multivalue_syntaxes": ["multivalue-basic", "mvproc", "d3-basic", "jbase-basic", "qm-basic", "mvbase-basic"],
 	"default_save_location": "%userprofile%\\code",
 	"default_file_extension": "bp",
 	"remove_file_extensions": ["bp", "qm", "d3", "proc", "jb", "mvbase"],
