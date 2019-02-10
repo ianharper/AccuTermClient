@@ -790,9 +790,9 @@ def plugin_loaded():
     for window in sublime.windows():
         for view in window.views():
             if not is_mv_syntax(view): continue
+            check_sync(view)
             if 'locked' == get_view_lock_state(view):
                 view.run_command('accu_term_lock')
-                check_sync(view)
 
 
 # Class: AccuTermRunCommand
