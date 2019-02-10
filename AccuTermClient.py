@@ -101,16 +101,22 @@ def get_setting_for_host(mv_svr, setting_name):
     return setting_val
 
 # Function: is_mv_syntax
-# Returns True if view is a MultiValue syntax. 
+# Returns True if view or settings are in MultiValue syntax. 
 # 
 # Parameters:
-#   view - Sublime view object.
+#   entity - Sublime view or settings object.
 # 
 # Returns:
-#   True - View is set to a MultiValue syntax.
-#   False - View is not set to a MultiValue syntax.
-def is_mv_syntax(view):
-    syntax = os.path.splitext(sublime.active_window().active_view().settings().get('syntax').split('/')[-1])[0]
+#   True - View/Settings is set to a MultiValue syntax.
+#   False - View/Settings is not set to a MultiValue syntax.
+def is_mv_syntax(entity):
+    if type(entity) is sublime.View: 
+        settings = entity.settings()
+    elif type(entity) is sublime.Settings:
+        settings = entity
+    else:
+        return False
+    syntax = os.path.splitext(settings.get('syntax').split('/')[-1])[0]
     multivalue_syntaxes = sublime.load_settings('AccuTermClient.sublime-settings').get('multivalue_syntaxes')
     return syntax in multivalue_syntaxes
 
@@ -163,7 +169,9 @@ def get_filename(window, mv_file, mv_item):
 #   string - Windows pathname.
 def get_base_path(window=sublime.active_window()):
     project_file_name = window.project_file_name()
-    base_path = sublime.load_settings('AccuTermClient.sublime-settings').get('default_save_location', '%userprofile%')
+    base_path = os.path.expandvars(
+        sublime.load_settings('AccuTermClient.sublime-settings').get('default_save_location', '%userprofile%')
+        )
     return os.path.dirname(project_file_name) if bool(project_file_name) else base_path
 
 
@@ -218,9 +226,9 @@ def find_view(view_name):
 # 
 # Returns:
 #   None
-def download(window, mv_file, mv_item):
+def download(window, mv_file, mv_item, file_name=None):
     if bool(mv_file) and bool(mv_item):
-        file_name = get_filename(window, mv_file, mv_item)
+        if not file_name: file_name = get_filename(window, mv_file, mv_item)
         mv_svr = connect()
         if mv_svr:
             if bool( mv_svr.ItemExists(mv_file, mv_item) ):
@@ -243,7 +251,7 @@ def download(window, mv_file, mv_item):
                         host_type = getHostType(mv_svr)
                         if host_type in mv_syntaxes: new_view.set_syntax_file(mv_syntaxes[host_type])
                     new_view.settings().set('AccuTermClient_mv_file_item', [mv_file, mv_item])
-                    new_view.settings().set('AccuTermClient_sync_skip', 'check')
+                    new_view.settings().set('AccuTermClient_sync_state', 'skip')
                     if readu_flag:
                         new_view.settings().set('AccuTermClient_lock_state', 'locked')
                     else:
@@ -280,14 +288,23 @@ def upload(view, mv_svr=connect()):
     return mv_svr.LastError
 
 
+# Function: check_sync
+# Compare the contents of a view against the corresponding item on the MV server.
+# 
+# Parameters:
+#   view - Sublime view object.
+# 
+# Returns:
+#   None
+# 
+# Sync States:
+#   check - proceed with sync on load. When the local copy is changed set to changed.
+#   skip  - item just downloaded. Change state to check and return. When the local copy is changed set to changed.
+#   changed - Local copy has changed, do not check. On upload set this to check.
+#   None  - If syntax is not do not check, otherwise change state to check and then check sync.
 def check_sync(view):
-    # todo: some kind of settting should be checked here to make sure that the view hasn't been changed since it was loaded.
-    # sync states:
-    #   check - proceed with sync on load. When the local copy is changed set to changed.
-    #   skip  - item just downloaded. Change state to check and return. When the local copy is changed set to changed.
-    #   changed - Local copy has changed, do not check. On upload set this to check.
-    #   None  - do not check.
     sync_state = view.settings().get('AccuTermClient_sync_state')
+    if sync_state == None and is_mv_syntax(view): sync_state = 'check'
     if sync_state == None or sync_state == 'changed':
         return
     elif sync_state == 'skip':
@@ -302,7 +319,6 @@ def check_sync(view):
                 prompt = mv_file + ' ' + mv_item + ' has changed on the MV server. Do you want to download a fresh copy?'
                 if sublime.ok_cancel_dialog(prompt, 'Download'):
                     view.run_command('accu_term_refresh')
-
 
 
 # Class: AccuTermUploadCommand
@@ -627,7 +643,7 @@ class AccuTermUnlock(sublime_plugin.WindowCommand):
 class AccuTermRefreshCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         (mv_file, mv_item) = get_file_item(self.view)
-        download(self.view.window(), mv_file, mv_item)
+        download(self.view.window(), mv_file, mv_item, self.view.file_name())
 
 
 # Class: AccuTermListCommand
@@ -747,17 +763,23 @@ class EventListener(sublime_plugin.EventListener):
                 print('disabling prev/next')
                 return ('None', '')
 
+
+# Class: AccuTermClientLoadListener
+# When view is loaded it will be checked against the item on the MV server with <check_sync>.
 class AccuTermClientLoadListener(sublime_plugin.ViewEventListener):
+    def __init__(self, view):
+        self.view = view
+
     def is_applicable(settings):
         if settings.get('AccuTermClient_sync_state') == None:
-            return False
+            return is_mv_syntax(settings)
         else:
             return True
 
     def applies_to_primary_view_only():
         return True
 
-    def on_load_async():
+    def on_load_async(self):
         check_sync(self.view)
 
 
@@ -765,11 +787,12 @@ class AccuTermClientLoadListener(sublime_plugin.ViewEventListener):
 # Event: plugin_loaded
 # Lock all MV items that were locked previously. Triggered by Sublime during startup.
 def plugin_loaded():
-    for view in sublime.active_window().views():
-        if not is_mv_syntax(view): continue
-        if 'locked' == get_view_lock_state(view):
-            view.run_command('accu_term_lock')
-            check_sync(view)
+    for window in sublime.windows():
+        for view in window.views():
+            if not is_mv_syntax(view): continue
+            if 'locked' == get_view_lock_state(view):
+                view.run_command('accu_term_lock')
+                check_sync(view)
 
 
 # Class: AccuTermRunCommand
