@@ -100,6 +100,20 @@ def get_setting_for_host(mv_svr, setting_name):
         if host_type in setting_val: setting_val = setting_val[host_type]
     return setting_val
 
+# Function: is_mv_syntax
+# Returns True if view is a MultiValue syntax. 
+# 
+# Parameters:
+#   view - Sublime view object.
+# 
+# Returns:
+#   True - View is set to a MultiValue syntax.
+#   False - View is not set to a MultiValue syntax.
+def is_mv_syntax(view):
+    syntax = os.path.splitext(sublime.active_window().active_view().settings().get('syntax').split('/')[-1])[0]
+    multivalue_syntaxes = sublime.load_settings('AccuTermClient.sublime-settings').get('multivalue_syntaxes')
+    return syntax in multivalue_syntaxes
+
 # Function: get_file_item
 # Gets the file item reference from a passed Sublime view object.
 # 
@@ -710,8 +724,11 @@ class EventListener(sublime_plugin.EventListener):
                 print('disabling prev/next')
                 return ('None', '')
 
+# Event: plugin_loaded
+# Lock all MV items that were locked previously. Triggered by Sublime during startup.
 def plugin_loaded():
     for view in sublime.active_window().views():
+        if not is_mv_syntax(view): continue
         if 'locked' == get_view_lock_state(view):
             view.run_command('accu_term_lock')
 
