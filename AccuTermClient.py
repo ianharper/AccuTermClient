@@ -10,6 +10,7 @@ import threading
 import pythoncom
 import re
 
+
 # Function: log_output
 # Displays text in an output panel.
 # 
@@ -275,7 +276,8 @@ def download(window, mv_file, mv_item, file_name=None):
 # 
 # Returns:
 #   string - Error message, empty for success.
-def upload(view, mv_svr=connect()):
+def upload(view, mv_svr=None):
+    if not mv_svr: mv_svr = connect()
     (mv_file, mv_item) = get_file_item(view)
     data = view.substr( sublime.Region(0, view.size()) ).replace('\n', '\xFE')
     if mv_svr.IsConnected():
@@ -324,7 +326,8 @@ def check_sync(view):
 # Class: AccuTermUploadCommand
 # Upload the current view to the MV server.
 class AccuTermUploadCommand(sublime_plugin.TextCommand):
-    def run(self, edit, mv_svr=connect()):
+    def run(self, edit, mv_svr=None):
+        if not mv_svr: mv_svr = connect()
         (mv_file, mv_item) = get_file_item(self.view)
         data = self.view.substr( sublime.Region(0, self.view.size()) ).replace('\n', '\xFE')
         if mv_svr.IsConnected():
@@ -808,4 +811,3 @@ class AccuTermRunCommand(sublime_plugin.TextCommand):
             else: 
                 command = 'RUN ' + mv_file + ' ' + mv_item
             self.view.run_command('accu_term_execute', {"output_to": 'console', "command": command})
-
