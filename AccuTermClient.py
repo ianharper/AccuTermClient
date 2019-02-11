@@ -297,7 +297,7 @@ def upload(view, mv_svr=None):
 #   view - Sublime view object.
 # 
 # Returns:
-#   None
+#   sync_state - String state value.
 # 
 # Sync States:
 #   check - proceed with sync on load. When the local copy is changed set to changed.
@@ -307,10 +307,9 @@ def upload(view, mv_svr=None):
 def check_sync(view):
     sync_state = view.settings().get('AccuTermClient_sync_state')
     if sync_state == None and is_mv_syntax(view): sync_state = 'check'
-    if sync_state == None or sync_state == 'changed':
-        return
-    elif sync_state == 'skip':
-        view.settings().set('AccuTermClient_sync_state', 'check')
+    if sync_state == 'skip':
+        sync_state = 'check'
+        view.settings().set('AccuTermClient_sync_state', sync_state)
     elif sync_state == 'check':
         (mv_file, mv_item) = get_file_item(view)
         mv_svr = connect()
@@ -321,6 +320,7 @@ def check_sync(view):
                 prompt = mv_file + ' ' + mv_item + ' has changed on the MV server. Do you want to download a fresh copy?'
                 if sublime.ok_cancel_dialog(prompt, 'Download'):
                     view.run_command('accu_term_refresh')
+    return sync_state
 
 
 # Class: AccuTermUploadCommand
@@ -749,6 +749,15 @@ class AccuTermGlobalDowncase(sublime_plugin.TextCommand):
     def run(self, edit):       
         source_upcase = changeCase( self.view.substr(sublime.Region(0, self.view.size())), 'lower')
         self.view.run_command('accu_term_replace_file', {"text": source_upcase})        
+
+
+# Class: AccuTermCheckSyncCommand
+# Check the active MV item against the item on the server.
+class AccuTermCheckSyncCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        self.view.settings().set('AccuTermClient_sync_state', 'check')
+        check_sync(self.view)
+        self.view.window().status_message('Sync check completed.')
 
 
 # Class: EventListener        
