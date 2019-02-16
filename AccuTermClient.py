@@ -39,13 +39,15 @@ def log_output(window, output_text, panel_name='AccuTermClient'):
 # 
 # Returns:
 #   object - AccuTerm Server object.
-def connect(panel_name='AccuTermClient'):
+def connect(panel_name='AccuTermClient', show_error=True):
+    global global_connection
+    if ( 'global_connection' in vars() or 'global_connection' in globals() ) and global_connection.IsConnected(): return global_connection
     mv_svr = Dispatch('atMVSvr71.Server')
     if mv_svr.Connect():
         # log_output(sublime.active_window(), 'Connected', panel_name) # Ideally the connecct would be passed the window but this is intended for debugging only.
-        pass
+        global_connection = mv_svr
     else: 
-        log_output(sublime.active_window(), 'Unable to connect to AccuTerm\nMake sure AccuTerm is running FTSERVER.', panel_name)
+        if show_error: log_output(sublime.active_window(), 'Unable to connect to AccuTerm\nMake sure AccuTerm is running FTSERVER.', panel_name)
     return mv_svr
 
 
@@ -262,7 +264,6 @@ def download(window, mv_file, mv_item, file_name=None):
                         new_view.set_syntax_file(mv_syntaxes['PROC'])
             else: 
                 log_output(window, mv_file + ' ' + mv_item + ' not found.')
-            mv_svr.Disconnect()
     else:
         log_output(window, 'Invalid Input: ' + str(mv_file) + ' ' + str(mv_item) + ' (Must be [file] [item])')
 
@@ -633,7 +634,6 @@ class AccuTermUnlock(sublime_plugin.WindowCommand):
             if mv_svr:
                 mv_svr.UnlockItem(mv_file, mv_item)
                 check_error_message(self.window, mv_svr, mv_file + ' ' + mv_item + ' unlocked')
-                mv_svr.Disconnect()
         else:
             log_output(self.window, 'Invalid Input: ' + item_ref + ' (Must be [file] [item])')
 
@@ -820,3 +820,6 @@ class AccuTermRunCommand(sublime_plugin.TextCommand):
             else: 
                 command = 'RUN ' + mv_file + ' ' + mv_item
             self.view.run_command('accu_term_execute', {"output_to": 'console', "command": command})
+
+global_connection = connect(show_error=False)
+
