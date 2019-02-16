@@ -5,6 +5,7 @@ AccuTerm client for Sublime Text.
 ## Features 
 ### Standard Features - Will work with all MV DBMS that support Accuterm
 * Download & upload files
+* Compile source code
 * Lock/Unlock items on the MultiValue server
 * Iconv/Oconv from Sublime
 * Run currently open file 
@@ -14,7 +15,8 @@ AccuTerm client for Sublime Text.
 ### Extended Features - Limited availability without additional configuration 
 These features require DBMS specific configuration to run. D3, QM, and jBASE are configured automatically. Additional DBMS can be setup manually (see the _Settings_ section below).
 
-* Compile source code
+* Prev/Next compile error
+* Browse command stack
 * Browse files on MV server (jBASE Windows not supported)
 
 ## Requirements
@@ -67,6 +69,8 @@ The settings can be accessed in the Preferences>Package Settings>AccuTermClient>
 | result_line_regex | Regular expression used to find the line number of compile errors. See [exec Target Options](https://www.sublimetext.com/docs/3/build_systems.html#exec_options) in the Sublime Docs for details. |
 | list_files_command | Command to list all the files in the account. Used in the AccuTermClient List command. The output must contain only the file name, one per line. |
 | list_command | This command is run after a file is chosen from the List command. The value is appended to limit the output to only the item names. |
+| syntax_file_locations | List of MV syntaxes to apply after downloading. The default values come from the MultiValue Basic Sublime package |
+| command_history | MV file and item for the command stack. |
 
 
 
