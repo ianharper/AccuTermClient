@@ -15,5 +15,6 @@
 	{"caption": "AccuTermClient Execute (Replace Current)", "command": "accu_term_execute", "args": {"output_to": "replace"} },
 	{"caption": "AccuTermClient Oconv", "command": "accu_term_conv", "args": {"conv_type": "oconv"} },
 	{"caption": "AccuTermClient Iconv", "command": "accu_term_conv", "args": {"conv_type": "iconv"} },
-	{"caption": "AccuTermClient Run Current File", "command": "accu_term_run", }
+	{"caption": "AccuTermClient Run Current File", "command": "accu_term_run", },
+	{"caption": "AccuTermClient Check Sync (Current File)", "command": "accu_term_check_sync"}
 ]
