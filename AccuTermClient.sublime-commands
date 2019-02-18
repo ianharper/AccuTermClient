@@ -3,6 +3,7 @@
 	{"caption": "AccuTermClient Compile", "command": "accu_term_compile"},
 	{"caption": "AccuTermClient Release", "command": "accu_term_release"},
 	{"caption": "AccuTermClient Open", "command": "accu_term_download"},
+	{"caption": "AccuTermClient Open (Read Only)", "command": "accu_term_download", "args": {"readu_flag": false}},
 	{"caption": "AccuTermClient Unlock", "command": "accu_term_unlock"},
 	{"caption": "AccuTermClient Refresh", "command": "accu_term_refresh"},
 	{"caption": "AccuTermClient List", "command": "accu_term_list"},
