@@ -227,14 +227,15 @@ def find_view(view_name):
 # 
 # Returns:
 #   None
-def download(window, mv_file, mv_item, file_name=None):
+def download(window, mv_file, mv_item, file_name=None, readu_flag=None):
     if bool(mv_file) and bool(mv_item):
         if not file_name: file_name = get_filename(window, mv_file, mv_item)
         mv_svr = connect()
         if mv_svr:
             if bool( mv_svr.ItemExists(mv_file, mv_item) ):
                 mv_syntaxes = sublime.load_settings('AccuTermClient.sublime-settings').get('syntax_file_locations', {})
-                readu_flag = sublime.load_settings('AccuTermClient.sublime-settings').get('open_with_readu', True)
+
+                if readu_flag == None: readu_flag = sublime.load_settings('AccuTermClient.sublime-settings').get('open_with_readu', True)
                 if readu_flag:
                     mv_svr.UnlockItem(mv_file, mv_item)
                     data = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 1)
@@ -243,6 +244,7 @@ def download(window, mv_file, mv_item, file_name=None):
                         data = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 0)
                 else:
                     data = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 0)
+
                 if check_error_message(window, mv_svr, 'Download success'):
                     new_view = find_view(file_name)
                     if new_view == None:
@@ -438,6 +440,10 @@ class AccuTermReplaceFileCommand(sublime_plugin.TextCommand):
 # Class: AccuTermDownload
 # Download an item from the MV server.
 class AccuTermDownload(sublime_plugin.WindowCommand):
+    def __init__(self, window):
+        self.readu_flag = None
+        self.window     = window
+
     # Function: on_done
     # Run the <Download> function with the mv file item reference.
     # 
@@ -448,13 +454,14 @@ class AccuTermDownload(sublime_plugin.WindowCommand):
         item_ref = item_ref.split()
         if len(item_ref) == 2:
             [mv_file, mv_item] = item_ref
-            download(self.window, mv_file, mv_item)
+            download(self.window, mv_file, mv_item, readu_flag=self.readu_flag)
         else:
             log_output(self.window, 'Invalid Input: ' + ' '.join(item_ref) + ' (Must be [file] [item])')
 
     # Function: run
     # Show a Sublime input panel to get the MV file item reference.
     def run(self, **kwargs):
+        if 'readu_flag' in kwargs: self.readu_flag = kwargs['readu_flag']
         self.window.show_input_panel('Enter the MV file and item', '', self.on_done, None, None)
 
 
