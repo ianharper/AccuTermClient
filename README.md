@@ -4,7 +4,8 @@ AccuTerm client is a plugin for Sublime Text allows you to connect to a MultiVal
 source code editing and compiling on remote MV servers as well as executing commands and using the native data conversion processing codes (OCONV/ICONV). 
 
 ## Features 
-### Standard Features - Will work with all MV DBMS that support Accuterm
+### Standard Features
+These features will work with all MV DBMS that support Accuterm.
 * Download & upload files
 * Compile source code
 * Lock/Unlock items on the MultiValue server
@@ -13,7 +14,7 @@ source code editing and compiling on remote MV servers as well as executing comm
 * Execute commands on the MV Server and display output in Sublime
 * Global case change while preserving case in comments & strings
 
-### Extended Features - Limited availability without additional configuration 
+### Extended Features
 These features require DBMS specific configuration to run. D3, QM, and jBASE are configured automatically. Additional DBMS can be setup manually (see the _Settings_ section below).
 
 * Prev/Next compile error
@@ -45,12 +46,12 @@ This package expects that all files on your local machine to be contained in a f
 Example: C:\code\BP\HELLO.WORLD.bp will be uploaded to BP HELLO.WORLD in the account that FTSERVER is running in.
 
 ### Commands
+* Open - Download item from MV server by entering MV file reference. Will lock item on MV server if _open_with_readu_ setting is true.
+* Open (Read Only) - Download item from MV sever without locking by entering MV file reference.
 * Upload - Upload current file to MV server.
 * Compile - Compile Current file on MV server.
 * Release - Release lock of current file on MV server.
 * Release All - Release all locks held by current user on MV server.
-* Open - Download item from MV server by entering MV file reference. Will lock item on MV server if _open_with_readu_ setting is true.
-* Open (Read Only) - Download item from MV sever without locking by entering MV file reference.
 * Unlock - unlock item on MV server by entering MV file reference.
 * Refresh - Update currently open file in Sublime from MV server and lock item on MV server.
 * Check Sync (Current File) - Compare the currently open file to the item on the MV server. If the item on the MV server is different than the local file you will be asked if you want to download the changes from the MV server.
@@ -72,7 +73,7 @@ The settings can be accessed in the Preferences>Package Settings>AccuTermClient>
 | compile_command | Command to execute when the Sublime Build command is run. |
 | result_line_regex | Regular expression used to find the line number of compile errors. See [exec Target Options](https://www.sublimetext.com/docs/3/build_systems.html#exec_options) in the Sublime Docs for details. |
 | list_files_command | Command to list all the files in the account. Used in the AccuTermClient List command. The output must contain only the file name, one per line. |
-| list_command | This command is run after a file is chosen from the List command. The value is appended to limit the output to only the item names. |
+| list_command | This command is run after a file is chosen from the List command. The value is appended to a "SORT (filename) " command  to limit the output to only the item names. |
 | syntax_file_locations | List of MV syntaxes to apply after downloading. The default values come from the MultiValue Basic Sublime package |
 | command_history | MV file and item for the command stack. |
 
@@ -81,9 +82,6 @@ The settings can be accessed in the Preferences>Package Settings>AccuTermClient>
 # Todo
 * Add more event listener functions (automatic check for changes on server)
 * Add support for jBASE windows.
-* Autofill execute command with selected text.
-* Add ability to run multiple commands at once and view the output.
 * Enable custom compile compile commands to allow multiple commands (like BASIC %FILE %ITEM & COMPILE %FILE %ITEM)
-* Add setting to disable automatic locking of items when downloaded.
 * Set MV syntax automatically based on DBMS type and file contents (ex. PQ in line 1 should set PROC).
 * Allow file extensions to be set based on DBMS type and file contents (ex. PQ in line 1 should set proc ext.).
