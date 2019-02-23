@@ -52,6 +52,7 @@ Example: C:\code\BP\HELLO.WORLD.bp will be uploaded to BP HELLO.WORLD in the acc
 * Open (Read Only) - Download item from MV sever without locking by entering MV file reference.
 * Unlock - unlock item on MV server by entering MV file reference.
 * Refresh - Update currently open file in Sublime from MV server and lock item on MV server.
+* Check Sync (Current File) - Compare the currently open file to the item on the MV server. If the item on the MV server is different than the local file you will be asked if you want to download the changes from the MV server.
 * List - Browse files on MV server using Sublime's command palate, select item with enter to download. 
 * Lock - Lock item on MV server by entering MV file reference.
 * Execute - Run commands on MV server and show output in Sublime (to console, new file, or append to current file).
