@@ -421,12 +421,17 @@ class AccuTermReleaseCommand(sublime_plugin.TextCommand):
 
 
 # Class: AccuTermReleaseAllCommand
-# Release all locks on the MV server.
+# Release all locks on the MV server and set the lock state to released for all views with the "locked" lock state.
 class AccuTermReleaseAllCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         mv_svr = connect()
         if mv_svr.IsConnected():
             mv_svr.UnlockItem()
+            if mv_svr.LastError == 0:
+                for window in sublime.windows():
+                    for view in window.views():
+                        if not is_mv_syntax(view): continue
+                        if view.settings().get('AccuTermClient_lock_state') == 'locked': view.settings().set('AccuTermClient_lock_state', 'released')
             check_error_message(self.view.window(), mv_svr, 'All items on MV server have been released')
 
 
