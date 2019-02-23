@@ -48,6 +48,7 @@ Example: C:\code\BP\HELLO.WORLD.bp will be uploaded to BP HELLO.WORLD in the acc
 * Upload - Upload current file to MV server.
 * Compile - Compile Current file on MV server.
 * Release - Release lock of current file on MV server.
+* Release All - Release all locks held by current user on MV server.
 * Open - Download item from MV server by entering MV file reference. Will lock item on MV server if _open_with_readu_ setting is true.
 * Open (Read Only) - Download item from MV sever without locking by entering MV file reference.
 * Unlock - unlock item on MV server by entering MV file reference.
