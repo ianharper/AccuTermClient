@@ -1,6 +1,7 @@
 # AccuTermClient
 
-AccuTerm client for Sublime Text.
+AccuTerm client is a plugin for Sublime Text allows you to connect to a MultiValue server using AccuTerm. This plugin allows for 
+source code editing and compiling on remote MV servers as well as executing commands and using the native data conversion processing codes (OCONV/ICONV). 
 
 ## Features 
 ### Standard Features - Will work with all MV DBMS that support Accuterm
@@ -10,7 +11,7 @@ AccuTerm client for Sublime Text.
 * Iconv/Oconv from Sublime
 * Run currently open file 
 * Execute commands on the MV Server and display output in Sublime
-* Global case change (preserves case in comments & strings)
+* Global case change while preserving case in comments & strings
 
 ### Extended Features - Limited availability without additional configuration 
 These features require DBMS specific configuration to run. D3, QM, and jBASE are configured automatically. Additional DBMS can be setup manually (see the _Settings_ section below).
@@ -47,12 +48,13 @@ Example: C:\code\BP\HELLO.WORLD.bp will be uploaded to BP HELLO.WORLD in the acc
 * Upload - Upload current file to MV server.
 * Compile - Compile Current file on MV server.
 * Release - Release lock of current file on MV server.
-* Open - Download item from MV server by entering MV file reference.
+* Open - Download item from MV server by entering MV file reference. Will lock item on MV server if _open_with_readu_ setting is true.
+* Open (Read Only) - Download item from MV sever without locking by entering MV file reference.
 * Unlock - unlock item on MV server by entering MV file reference.
 * Refresh - Update currently open file in Sublime from MV server and lock item on MV server.
 * List - Browse files on MV server using Sublime's command palate, select item with enter to download. 
 * Lock - Lock item on MV server by entering MV file reference.
-* Execute - Run commands on MV server and show output in Sublime.
+* Execute - Run commands on MV server and show output in Sublime (to console, new file, or append to current file).
 * Run - Run the currently open file. If the item is in the MD/VOC then the item name will be used to run (enables running PROC, PARAGRAPH, or MACRO commands).
 * Iconv/Oconv - Convert data using the MV server's iconv/oconv functions.
 * Global Upcase - Convert case of currently open file to uppercase while preserving case in strings and comments.
