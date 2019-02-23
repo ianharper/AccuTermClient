@@ -2,6 +2,7 @@
 	{"caption": "AccuTermClient Upload", "command": "accu_term_upload"},
 	{"caption": "AccuTermClient Compile", "command": "accu_term_compile"},
 	{"caption": "AccuTermClient Release", "command": "accu_term_release"},
+	{"caption": "AccuTermClient Release All", "command": "accu_term_release_all"},
 	{"caption": "AccuTermClient Open", "command": "accu_term_download"},
 	{"caption": "AccuTermClient Open (Read Only)", "command": "accu_term_download", "args": {"readu_flag": false}},
 	{"caption": "AccuTermClient Unlock", "command": "accu_term_unlock"},

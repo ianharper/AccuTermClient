@@ -420,6 +420,16 @@ class AccuTermReleaseCommand(sublime_plugin.TextCommand):
             check_error_message(self.view.window(), mv_svr, 'Released ' + mv_file + ' ' + mv_item)
 
 
+# Class: AccuTermReleaseAllCommand
+# Release all locks on the MV server.
+class AccuTermReleaseAllCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        mv_svr = connect()
+        if mv_svr.IsConnected():
+            mv_svr.UnlockItem()
+            check_error_message(self.view.window(), mv_svr, 'All items on MV server have been released')
+
+
 # Class: AccuTermReplaceFileCommand
 # Replace the contents of the current view with text. Used internally to replace contents of a view
 # with data from the MV server.
