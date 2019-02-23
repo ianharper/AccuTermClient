@@ -29,6 +29,15 @@
 					},
 				},
 				{
+					"caption": "Custom commands",
+					"command": "edit_settings", "args":
+					{
+						"base_file": "${packages}/AccuTermClient/AccuTermClient.sublime-commands",
+						"user_file": "${packages}/User/AccuTermClient.sublime-commands",
+						"default": "//AccuTermClient - User Commands\n[\n\t{\n\t\t\t// Name the command\n\t\t\t\"caption\": \"Term - Disable page breaks\",\n\t\t\t// Set the Sublime command to run\n\t\t\t\"command\": \"accu_term_execute\",\n\t\t\t// Set the command to run on the MV server and where to show the output (console, new, append, or replace).\n\t\t\t\"args\": { \"command\": \"TERM 150,0\", \"output_to\": \"console\"}\n\t},\n]"
+					}
+				},
+				{
 					"caption": "Key Bindings",
 					"command": "edit_settings", "args":
 					{

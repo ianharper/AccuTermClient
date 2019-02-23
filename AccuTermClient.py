@@ -537,9 +537,16 @@ class AccuTermConv(sublime_plugin.TextCommand):
 #   console - Append the output to the console.
 class AccuTermExecute(sublime_plugin.TextCommand):
     def input(self, args):
+        if 'command' in args and args['command']: return None
         return ExecuteInputHandler(self.view)
 
     def run(self, edit, output_to='console', command=None): 
+        # Expand the command with defined environment variables.
+        if command:
+            (mv_file, mv_item) = get_file_item(self.view)
+            command = command.replace('${FILE}', mv_file)
+            command = command.replace('${ITEM}', mv_item)
+
         self.command = command
         self.command_view = self.view
         if self.view.window() == None: output_to = 'console'
