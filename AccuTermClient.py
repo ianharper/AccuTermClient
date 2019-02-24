@@ -809,6 +809,16 @@ class EventListener(sublime_plugin.EventListener):
                 print('disabling prev/next')
                 return ('None', '')
 
+    def on_post_window_command(self, window, command_name, args):
+        if 'close_workspace' == command_name:
+            for view in window.views():
+                if is_mv_syntax(view) and view.settings().get('AccuTermClient_lock_state', '') == 'locked': 
+                    view.run_command('accu_term_release')
+        elif command_name in ['open_recent_project_or_workspace', 'prompt_select_workspace', 'prompt_open_project_or_workspace']:
+            for view in window.views():
+                if is_mv_syntax(view) and view.settings().get('AccuTermClient_lock_state', '') in ['released', 'locked']: 
+                    view.run_command('accu_term_lock')
+
 
 # Class: AccuTermClientLoadListener
 # When view is loaded it will be checked against the item on the MV server with <check_sync>.
@@ -837,7 +847,7 @@ def plugin_loaded():
         for view in window.views():
             if not is_mv_syntax(view): continue
             check_sync(view)
-            if 'locked' == get_view_lock_state(view):
+            if get_view_lock_state(view) in ['locked', 'released']:
                 view.run_command('accu_term_lock')
 
 
