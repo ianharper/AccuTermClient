@@ -566,7 +566,9 @@ class AccuTermExecute(sublime_plugin.TextCommand):
 
         self.command = command
         self.command_view = self.view
-        if self.view.window() == None: output_to = 'console'
+        if self.view.window() == None: 
+            output_to = 'console'
+            self.view = sublime.active_window().active_view()
         
         def append():
             if threading.currentThread().getName() != 'MainThread': pythoncom.CoInitialize()
@@ -611,7 +613,9 @@ class AccuTermExecute(sublime_plugin.TextCommand):
             for command in commands:
                 results += command + '\n'
                 results += mv_svr.Execute(command, '', 1).replace('\x1b', '').replace(os.linesep, '\n') + '\n\n'
-                check_error_message(self.view.window(), mv_svr, '')
+                window = self.view.window()
+                if not window: window = sublime.active_window()
+                check_error_message(window, mv_svr, '')
         return results
 
 
