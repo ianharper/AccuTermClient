@@ -729,7 +729,6 @@ class AccuTermListCommand(sublime_plugin.WindowCommand):
 # Lock an item on the MV server with a supplied file item reference.
 class AccuTermLockCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        file_name = self.view.file_name()
         (mv_file, mv_item) = get_file_item(self.view)
         mv_svr = connect()
         if mv_svr:
@@ -860,7 +859,6 @@ def plugin_loaded():
 # Run the currently open file. If the item is in the MD/VOC then the item name will be used to run (enables running PROC, PARAGRAPH, or MACRO commands).
 class AccuTermRunCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        file_name = self.view.file_name()
         (mv_file, mv_item) = get_file_item(self.view)
         mv_svr = connect()
         if mv_svr.IsConnected(): 
