@@ -242,6 +242,7 @@ def download(window, mv_file, mv_item, file_name=None, readu_flag=None):
                     if mv_svr.LastError == 260 and \
                     sublime.ok_cancel_dialog( mv_file + ' ' + mv_item + ' is locked by another port. Do you want to open this as read-only (without a lock)?', ok_title='Yes'):
                         data = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 0)
+                        readu_flag = False
                 else:
                     data = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 0)
 
