@@ -267,6 +267,7 @@ def download(window, mv_file, mv_item, file_name=None, readu_flag=None):
                     new_view.run_command('accu_term_replace_file', {"text": data})
                     if new_view.substr(sublime.Region(0,2)).upper() == 'PQ':
                         new_view.set_syntax_file(mv_syntaxes['PROC'])
+                    new_view.set_status('AccuTermClient_lock_state', new_view.settings().get('AccuTermClient_lock_state', ''))
             else: 
                 log_output(window, mv_file + ' ' + mv_item + ' not found.')
             mv_svr.Disconnect()
@@ -420,6 +421,7 @@ class AccuTermReleaseCommand(sublime_plugin.TextCommand):
             mv_svr.UnlockItem(mv_file, mv_item)
             if mv_svr.LastError == 0: self.view.settings().set('AccuTermClient_lock_state', 'released')
             check_error_message(self.view.window(), mv_svr, 'Released ' + mv_file + ' ' + mv_item)
+        self.view.set_status('AccuTermClient_lock_state', self.view.settings().get('AccuTermClient_lock_state', ''))
 
 
 # Class: AccuTermReleaseAllCommand
@@ -434,6 +436,7 @@ class AccuTermReleaseAllCommand(sublime_plugin.TextCommand):
                     for view in window.views():
                         if not is_mv_syntax(view): continue
                         if view.settings().get('AccuTermClient_lock_state') == 'locked': view.settings().set('AccuTermClient_lock_state', 'released')
+                        view.set_status('AccuTermClient_lock_state', self.view.settings().get('AccuTermClient_lock_state', ''))
             check_error_message(self.view.window(), mv_svr, 'All items on MV server have been released')
 
 
@@ -741,6 +744,7 @@ class AccuTermLockCommand(sublime_plugin.TextCommand):
                 else:
                     self.view.settings().set('AccuTermClient_lock_state', 'released')
                 check_error_message(self.view.window(), mv_svr, mv_file + ' ' + mv_item + ' locked')
+        self.view.set_status('AccuTermClient_lock_state', self.view.settings().get('AccuTermClient_lock_state', ''))
 
 def changeCase(text, case_funct='upper()'):
     source_code = []
