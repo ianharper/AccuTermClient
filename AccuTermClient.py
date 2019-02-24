@@ -136,7 +136,8 @@ def get_file_item(view):
     if not bool(file_name): # file item not stored in view settings, get based on file path name.
         file_name = view.file_name()
         if file_name == None: # file not saved locally, spoof a file name
-            file_name = ''.join([view.settings().get('default_dir'), os.sep, view.name()])
+            file_name = ''.join([view.settings().get('default_dir', ''), os.sep, view.name()])
+    if not bool(file_name): return (None, None)
     mv_file = file_name.split(os.sep)[-2]
     mv_item = file_name.split(os.sep)[-1] 
     remove_file_ext = sublime.load_settings('AccuTermClient.sublime-settings').get('remove_file_extensions')
@@ -560,8 +561,8 @@ class AccuTermExecute(sublime_plugin.TextCommand):
         # Expand the command with defined environment variables.
         if command:
             (mv_file, mv_item) = get_file_item(self.view)
-            command = command.replace('${FILE}', mv_file)
-            command = command.replace('${ITEM}', mv_item)
+            if mv_file: command = command.replace('${FILE}', mv_file)
+            if mv_item: command = command.replace('${ITEM}', mv_item)
 
         self.command = command
         self.command_view = self.view
