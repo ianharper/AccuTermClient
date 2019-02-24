@@ -412,9 +412,6 @@ class AccuTermCompileCommand(sublime_plugin.WindowCommand):
 # Release the lock on the MV server corresponding to the current view.
 class AccuTermReleaseCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        file_name = self.view.file_name()
-        if file_name == None: file_name = os.sep.join([self.view.settings().get('default_dir'), self.view.name()])
-        log_output(self.view.window(), file_name)
         (mv_file, mv_item) = get_file_item(self.view)
         mv_svr = connect()
         if mv_svr:
