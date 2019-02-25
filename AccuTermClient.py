@@ -136,7 +136,8 @@ def get_file_item(view):
     if not bool(file_name): # file item not stored in view settings, get based on file path name.
         file_name = view.file_name()
         if file_name == None: # file not saved locally, spoof a file name
-            file_name = ''.join([view.settings().get('default_dir'), os.sep, view.name()])
+            file_name = ''.join([view.settings().get('default_dir', ''), os.sep, view.name()])
+    if not bool(file_name): return (None, None)
     mv_file = file_name.split(os.sep)[-2]
     mv_item = file_name.split(os.sep)[-1] 
     remove_file_ext = sublime.load_settings('AccuTermClient.sublime-settings').get('remove_file_extensions')
@@ -266,6 +267,7 @@ def download(window, mv_file, mv_item, file_name=None, readu_flag=None):
                     new_view.run_command('accu_term_replace_file', {"text": data})
                     if new_view.substr(sublime.Region(0,2)).upper() == 'PQ':
                         new_view.set_syntax_file(mv_syntaxes['PROC'])
+                    new_view.set_status('AccuTermClient_lock_state', new_view.settings().get('AccuTermClient_lock_state', ''))
             else: 
                 log_output(window, mv_file + ' ' + mv_item + ' not found.')
             mv_svr.Disconnect()
@@ -410,15 +412,13 @@ class AccuTermCompileCommand(sublime_plugin.WindowCommand):
 # Release the lock on the MV server corresponding to the current view.
 class AccuTermReleaseCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        file_name = self.view.file_name()
-        if file_name == None: file_name = os.sep.join([self.view.settings().get('default_dir'), self.view.name()])
-        log_output(self.view.window(), file_name)
         (mv_file, mv_item) = get_file_item(self.view)
         mv_svr = connect()
         if mv_svr:
             mv_svr.UnlockItem(mv_file, mv_item)
             if mv_svr.LastError == 0: self.view.settings().set('AccuTermClient_lock_state', 'released')
             check_error_message(self.view.window(), mv_svr, 'Released ' + mv_file + ' ' + mv_item)
+        self.view.set_status('AccuTermClient_lock_state', self.view.settings().get('AccuTermClient_lock_state', ''))
 
 
 # Class: AccuTermReleaseAllCommand
@@ -433,6 +433,7 @@ class AccuTermReleaseAllCommand(sublime_plugin.TextCommand):
                     for view in window.views():
                         if not is_mv_syntax(view): continue
                         if view.settings().get('AccuTermClient_lock_state') == 'locked': view.settings().set('AccuTermClient_lock_state', 'released')
+                        view.set_status('AccuTermClient_lock_state', self.view.settings().get('AccuTermClient_lock_state', ''))
             check_error_message(self.view.window(), mv_svr, 'All items on MV server have been released')
 
 
@@ -560,12 +561,14 @@ class AccuTermExecute(sublime_plugin.TextCommand):
         # Expand the command with defined environment variables.
         if command:
             (mv_file, mv_item) = get_file_item(self.view)
-            command = command.replace('${FILE}', mv_file)
-            command = command.replace('${ITEM}', mv_item)
+            if mv_file: command = command.replace('${FILE}', mv_file)
+            if mv_item: command = command.replace('${ITEM}', mv_item)
 
         self.command = command
         self.command_view = self.view
-        if self.view.window() == None: output_to = 'console'
+        if self.view.window() == None: 
+            output_to = 'console'
+            self.view = sublime.active_window().active_view()
         
         def append():
             if threading.currentThread().getName() != 'MainThread': pythoncom.CoInitialize()
@@ -610,7 +613,9 @@ class AccuTermExecute(sublime_plugin.TextCommand):
             for command in commands:
                 results += command + '\n'
                 results += mv_svr.Execute(command, '', 1).replace('\x1b', '').replace(os.linesep, '\n') + '\n\n'
-                check_error_message(self.view.window(), mv_svr, '')
+                window = self.view.window()
+                if not window: window = sublime.active_window()
+                check_error_message(window, mv_svr, '')
         return results
 
 
@@ -724,7 +729,6 @@ class AccuTermListCommand(sublime_plugin.WindowCommand):
 # Lock an item on the MV server with a supplied file item reference.
 class AccuTermLockCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        file_name = self.view.file_name()
         (mv_file, mv_item) = get_file_item(self.view)
         mv_svr = connect()
         if mv_svr:
@@ -740,6 +744,7 @@ class AccuTermLockCommand(sublime_plugin.TextCommand):
                 else:
                     self.view.settings().set('AccuTermClient_lock_state', 'released')
                 check_error_message(self.view.window(), mv_svr, mv_file + ' ' + mv_item + ' locked')
+        self.view.set_status('AccuTermClient_lock_state', self.view.settings().get('AccuTermClient_lock_state', ''))
 
 def changeCase(text, case_funct='upper()'):
     source_code = []
@@ -808,6 +813,16 @@ class EventListener(sublime_plugin.EventListener):
                 print('disabling prev/next')
                 return ('None', '')
 
+    def on_post_window_command(self, window, command_name, args):
+        if 'close_workspace' == command_name:
+            for view in window.views():
+                if is_mv_syntax(view) and view.settings().get('AccuTermClient_lock_state', '') == 'locked': 
+                    view.run_command('accu_term_release')
+        elif command_name in ['open_recent_project_or_workspace', 'prompt_select_workspace', 'prompt_open_project_or_workspace']:
+            for view in window.views():
+                if is_mv_syntax(view) and view.settings().get('AccuTermClient_lock_state', '') in ['released', 'locked']: 
+                    view.run_command('accu_term_lock')
+
 
 # Class: AccuTermClientLoadListener
 # When view is loaded it will be checked against the item on the MV server with <check_sync>.
@@ -836,7 +851,7 @@ def plugin_loaded():
         for view in window.views():
             if not is_mv_syntax(view): continue
             check_sync(view)
-            if 'locked' == get_view_lock_state(view):
+            if get_view_lock_state(view) in ['locked', 'released']:
                 view.run_command('accu_term_lock')
 
 
@@ -844,7 +859,6 @@ def plugin_loaded():
 # Run the currently open file. If the item is in the MD/VOC then the item name will be used to run (enables running PROC, PARAGRAPH, or MACRO commands).
 class AccuTermRunCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        file_name = self.view.file_name()
         (mv_file, mv_item) = get_file_item(self.view)
         mv_svr = connect()
         if mv_svr.IsConnected(): 
