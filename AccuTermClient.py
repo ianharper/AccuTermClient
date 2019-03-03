@@ -312,7 +312,7 @@ def upload(view, mv_svr=None):
 #   skip  - item just downloaded. Change state to check and return. When the local copy is changed set to changed.
 #   changed - Local copy has changed, do not check. On upload set this to check.
 #   None  - If syntax is not do not check, otherwise change state to check and then check sync.
-def check_sync(view):
+def check_sync(view, mv_svr=None):
     sync_state = view.settings().get('AccuTermClient_sync_state')
     if sync_state == None and is_mv_syntax(view): sync_state = 'check'
     if sync_state == 'skip':
@@ -320,7 +320,7 @@ def check_sync(view):
         view.settings().set('AccuTermClient_sync_state', sync_state)
     elif sync_state == 'check':
         (mv_file, mv_item) = get_file_item(view)
-        mv_svr = connect()
+        if not mv_svr: mv_svr = connect()
         if mv_svr.IsConnected() and bool( mv_svr.ItemExists(mv_file, mv_item) ):
             data_mv = mv_svr.Readitem(mv_file, mv_item, 0, 0, 0, 0).replace('\r', '')
             data_local = view.substr( sublime.Region(0, view.size()) )
@@ -847,10 +847,12 @@ class AccuTermClientLoadListener(sublime_plugin.ViewEventListener):
 # Event: plugin_loaded
 # Lock all MV items that were locked previously. Triggered by Sublime during startup.
 def plugin_loaded():
+    mv_svr = connect()
+    if not mv_svr.IsConnected(): return 
     for window in sublime.windows():
         for view in window.views():
             if not is_mv_syntax(view): continue
-            check_sync(view)
+            check_sync(view, mv_svr=mv_svr)
             if get_view_lock_state(view) in ['locked', 'released']:
                 view.run_command('accu_term_lock')
 
