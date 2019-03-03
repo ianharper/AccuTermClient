@@ -847,14 +847,18 @@ class AccuTermClientLoadListener(sublime_plugin.ViewEventListener):
 # Event: plugin_loaded
 # Lock all MV items that were locked previously. Triggered by Sublime during startup.
 def plugin_loaded():
-    mv_svr = connect()
-    if not mv_svr.IsConnected(): return 
-    for window in sublime.windows():
-        for view in window.views():
-            if not is_mv_syntax(view): continue
-            check_sync(view, mv_svr=mv_svr)
-            if get_view_lock_state(view) in ['locked', 'released']:
-                view.run_command('accu_term_lock')
+
+    def run():
+        if threading.currentThread().getName() != 'MainThread': pythoncom.CoInitialize()
+        mv_svr = connect()
+        if not mv_svr.IsConnected(): return 
+        for window in sublime.windows():
+            for view in window.views():
+                if not is_mv_syntax(view): continue
+                check_sync(view, mv_svr=mv_svr)
+                if get_view_lock_state(view) in ['locked', 'released']:
+                    view.run_command('accu_term_lock')
+    sublime.set_timeout_async( lambda: run(), 0)
 
 
 # Class: AccuTermRunCommand
