@@ -825,23 +825,22 @@ class EventListener(sublime_plugin.EventListener):
 
 
 # Class: AccuTermClientLoadListener
-# When view is loaded it will be checked against the item on the MV server with <check_sync>.
+# When view is loaded it will be checked against the item on the MV server with <check_sync> and locking on the server will be updated as well.
 class AccuTermClientLoadListener(sublime_plugin.ViewEventListener):
     def __init__(self, view):
         self.view = view
 
     def is_applicable(settings):
-        if settings.get('AccuTermClient_sync_state') == None:
-            return is_mv_syntax(settings)
-        else:
-            return True
+        return is_mv_syntax(settings)
 
     def applies_to_primary_view_only():
         return True
 
-    def on_load_async(self):
-        check_sync(self.view)
-
+    def on_load(self):
+        # run functions as async, on_load_async wasn't firing for some reason.
+        sublime.set_timeout_async( lambda: check_sync(self.view), 0)
+        if get_view_lock_state(self.view) in ['locked', 'released']: 
+            sublime.set_timeout_async( lambda: self.view.run_command('accu_term_lock'), 0)
 
 
 # Event: plugin_loaded
