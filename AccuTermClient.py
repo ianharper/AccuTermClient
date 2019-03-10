@@ -417,7 +417,8 @@ class AccuTermReleaseCommand(sublime_plugin.TextCommand):
         if mv_svr:
             mv_svr.UnlockItem(mv_file, mv_item)
             if mv_svr.LastError == 0: self.view.settings().set('AccuTermClient_lock_state', 'released')
-            check_error_message(self.view.window(), mv_svr, 'Released ' + mv_file + ' ' + mv_item)
+            window = self.view.window() if self.view.window() else sublime.active_window()
+            check_error_message(window, mv_svr, 'Released ' + mv_file + ' ' + mv_item)
         self.view.set_status('AccuTermClient_lock_state', self.view.settings().get('AccuTermClient_lock_state', ''))
 
 
@@ -817,11 +818,11 @@ class EventListener(sublime_plugin.EventListener):
         if 'close_workspace' == command_name:
             for view in window.views():
                 if is_mv_syntax(view) and view.settings().get('AccuTermClient_lock_state', '') == 'locked': 
-                    view.run_command('accu_term_release')
+                    sublime.set_timeout_async( lambda: view.run_command('accu_term_release'), 0)
         elif command_name in ['open_recent_project_or_workspace', 'prompt_select_workspace', 'prompt_open_project_or_workspace']:
             for view in sublime.active_window().views():
                 if is_mv_syntax(view) and view.settings().get('AccuTermClient_lock_state', '') in ['released', 'locked']: 
-                    view.run_command('accu_term_lock')
+                    sublime.set_timeout_async( lambda: view.run_command('accu_term_lock'), 0)
 
 
 # Class: AccuTermClientLoadListener
