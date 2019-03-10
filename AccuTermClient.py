@@ -417,7 +417,8 @@ class AccuTermReleaseCommand(sublime_plugin.TextCommand):
         if mv_svr:
             mv_svr.UnlockItem(mv_file, mv_item)
             if mv_svr.LastError == 0: self.view.settings().set('AccuTermClient_lock_state', 'released')
-            check_error_message(self.view.window(), mv_svr, 'Released ' + mv_file + ' ' + mv_item)
+            window = self.view.window() if self.view.window() else sublime.active_window()
+            check_error_message(window, mv_svr, 'Released ' + mv_file + ' ' + mv_item)
         self.view.set_status('AccuTermClient_lock_state', self.view.settings().get('AccuTermClient_lock_state', ''))
 
 
