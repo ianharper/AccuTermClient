@@ -68,20 +68,36 @@ The settings can be accessed in the Preferences>Package Settings>AccuTermClient>
 
 | Setting Key | Description |
 | ----------- | ----------- |
-| Default Save Location | Location to save MV files by default. When editing a file in a Sublime project the project folder will be used instead.|
+| multivalue_syntaxes | List of MV syntaxes. Referenced to determine if a file in Sublime is MultiValue. |
+| default_save_location | Location to save MV files by default. When editing a file in a Sublime project the project folder will be used instead.|
 | remove_file_extensions | File extensions to remove when uploading to the MV server. | 
 | compile_command | Command to execute when the Sublime Build command is run. |
+| open_with_readu | Lock files on MV server when opening. |
 | result_line_regex | Regular expression used to find the line number of compile errors. See [exec Target Options](https://www.sublimetext.com/docs/3/build_systems.html#exec_options) in the Sublime Docs for details. |
 | list_files_command | Command to list all the files in the account. Used in the AccuTermClient List command. The output must contain only the file name, one per line. |
 | list_command | This command is run after a file is chosen from the List command. The value is appended to a "SORT (filename) " command  to limit the output to only the item names. |
 | syntax_file_locations | List of MV syntaxes to apply after downloading. The default values come from the MultiValue Basic Sublime package |
 | command_history | MV file and item for the command stack. |
 
+## Custom Commands
+Custom commands can be easily added from Preferences>Package Settings>AccuTermClient>Custom Commands. When added these commands will be shown in Sublime's command palate. The syntax for these commands follows [Sublime's command syntax](http://docs.sublimetext.info/en/latest/reference/command_palette.html) which is in JSON format (with comments). 
+
+Example:
+```
+[
+  {
+    // Name the command
+    "caption": "Term - Disable page breaks",
+    // Set the Sublime command to run
+    "command": "accu_term_execute",
+    // Set the command to run on the MV server and where to show the output (console, new, append, or replace).
+    "args": { "command": "TERM 150,0", "output_to": "console"}
+   }
+]
+```
 
 
 # Todo
-* Add more event listener functions (automatic check for changes on server)
 * Add support for jBASE windows.
-* Enable custom compile compile commands to allow multiple commands (like BASIC %FILE %ITEM & COMPILE %FILE %ITEM)
 * Set MV syntax automatically based on DBMS type and file contents (ex. PQ in line 1 should set PROC).
 * Allow file extensions to be set based on DBMS type and file contents (ex. PQ in line 1 should set proc ext.).
