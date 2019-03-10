@@ -818,11 +818,11 @@ class EventListener(sublime_plugin.EventListener):
         if 'close_workspace' == command_name:
             for view in window.views():
                 if is_mv_syntax(view) and view.settings().get('AccuTermClient_lock_state', '') == 'locked': 
-                    view.run_command('accu_term_release')
+                    sublime.set_timeout_async( lambda: view.run_command('accu_term_release'), 0)
         elif command_name in ['open_recent_project_or_workspace', 'prompt_select_workspace', 'prompt_open_project_or_workspace']:
             for view in sublime.active_window().views():
                 if is_mv_syntax(view) and view.settings().get('AccuTermClient_lock_state', '') in ['released', 'locked']: 
-                    view.run_command('accu_term_lock')
+                    sublime.set_timeout_async( lambda: view.run_command('accu_term_lock'), 0)
 
 
 # Class: AccuTermClientLoadListener
