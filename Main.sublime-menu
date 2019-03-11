@@ -29,7 +29,7 @@
 					},
 				},
 				{
-					"caption": "Custom commands",
+					"caption": "Custom Commands",
 					"command": "edit_settings", "args":
 					{
 						"base_file": "${packages}/AccuTermClient/AccuTermClient.sublime-commands",
