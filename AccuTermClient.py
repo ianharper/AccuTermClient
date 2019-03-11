@@ -397,9 +397,9 @@ class AccuTermCompileCommand(sublime_plugin.WindowCommand):
                 self.window.destroy_output_panel('AccuTermClient')
                 compile_command = sublime.load_settings('AccuTermClient.sublime-settings').get('compile_command', 'BASIC')
                 if type(compile_command) == str:
-                    result = mv_svr.Execute(compile_command + ' ' + mv_file + ' ' + mv_item)
+                    result = mv_svr.Execute(compile_command.replace('${FILE}', mv_file).replace('${ITEM}', mv_item))
                 else:
-                    result = '\n'.join( map(lambda cmd: mv_svr.Execute(cmd + ' ' + mv_file + ' ' + mv_item), compile_command) )
+                    result = '\n'.join( map(lambda cmd: mv_svr.Execute(cmd.replace('${FILE}', mv_file).replace('${ITEM}', mv_item)), compile_command) )
                 log_output(self.window, 'Compiling: ' + file_name + '\n' + result, 'exec')
                 if result.split('\n')[-1][:5] == '[241]': 
                     self.window.destroy_output_panel('exec')
