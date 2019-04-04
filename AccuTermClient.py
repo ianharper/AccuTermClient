@@ -626,7 +626,7 @@ class AccuTermExecute(sublime_plugin.TextCommand):
         results = ''
         mv_svr = connect()
         if mv_svr.IsConnected():
-            commands = commands.split('\n')
+            if type(commands) == str: commands = commands.split('\n')
             for command in commands:
                 results += command + '\n'
                 results += mv_svr.Execute(command, '', 1).replace('\x1b', '').replace(os.linesep, '\n') + '\n\n'
