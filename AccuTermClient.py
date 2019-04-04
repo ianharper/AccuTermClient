@@ -330,6 +330,23 @@ def check_sync(view, mv_svr=None):
                     view.run_command('accu_term_refresh')
     return sync_state
 
+# Function: expand_mv_command
+# Expand variables in MV commands with appropriate values.
+# 
+# Parameters:
+#   command - String or list of commands to run on server.
+# 
+# Returns:
+#   String or list of commands to run on server.
+# 
+# Expansion Variables:
+#   ${FILE} - MV File of active local file.
+#   ${ITEM} - MV item ID of active local file.
+def expand_mv_command(command, mv_file='', mv_item=''):
+    if type(command) == str:
+        return command.replace('${FILE}', mv_file).replace('${ITEM}', mv_item)
+    else:
+        return list( map(lambda cmd: cmd.replace('${FILE}', mv_file).replace('${ITEM}', mv_item), command ) )
 
 # Class: AccuTermUploadCommand
 # Upload the current view to the MV server.
@@ -397,9 +414,9 @@ class AccuTermCompileCommand(sublime_plugin.WindowCommand):
                 self.window.destroy_output_panel('AccuTermClient')
                 compile_command = sublime.load_settings('AccuTermClient.sublime-settings').get('compile_command', 'BASIC')
                 if type(compile_command) == str:
-                    result = mv_svr.Execute(compile_command.replace('${FILE}', mv_file).replace('${ITEM}', mv_item))
+                    result = mv_svr.Execute(expand_mv_command(compile_command, mv_file=mv_file, mv_item=mv_item))
                 else:
-                    result = '\n'.join( map(lambda cmd: mv_svr.Execute(cmd.replace('${FILE}', mv_file).replace('${ITEM}', mv_item)), compile_command) )
+                    result = '\n'.join( expand_mv_command(compile_command, mv_file=mv_file, mv_item=mv_item) )
                 log_output(self.window, 'Compiling: ' + file_name + '\n' + result, 'exec')
                 if result.split('\n')[-1][:5] == '[241]': 
                     self.window.destroy_output_panel('exec')
@@ -562,8 +579,7 @@ class AccuTermExecute(sublime_plugin.TextCommand):
         # Expand the command with defined environment variables.
         if command:
             (mv_file, mv_item) = get_file_item(self.view)
-            if mv_file: command = command.replace('${FILE}', mv_file)
-            if mv_item: command = command.replace('${ITEM}', mv_item)
+            command = expand_mv_command(command, mv_file=mv_file, mv_item=mv_item)
 
         self.command = command
         self.command_view = self.view
@@ -610,7 +626,7 @@ class AccuTermExecute(sublime_plugin.TextCommand):
         results = ''
         mv_svr = connect()
         if mv_svr.IsConnected():
-            commands = commands.split('\n')
+            if type(commands) == str: commands = commands.split('\n')
             for command in commands:
                 results += command + '\n'
                 results += mv_svr.Execute(command, '', 1).replace('\x1b', '').replace(os.linesep, '\n') + '\n\n'
