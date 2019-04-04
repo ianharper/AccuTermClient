@@ -841,7 +841,7 @@ class AccuTermClientLoadListener(sublime_plugin.ViewEventListener):
         self.check = True
 
     def on_activated(self):
-        if not self.check: return 
+        if not getattr(self, 'check', False): return 
         self.check = False
         sublime.set_timeout_async( lambda: check_sync(self.view), 0)
         if get_view_lock_state(self.view) in ['locked', 'released']: 
