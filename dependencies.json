@@ -1,21 +1,7 @@
 {
- "schema_version": "3.0.0",
- "packages": [],
- "dependencies": [
-        {
-            "name": "pyWin32",
-            "load_order": "01",
-            "description": "pywin32 for Sublime Text",
-            "author": "packagecontrol", 
-            "issues": "https://github.com/packagecontrol/sublime-pywin32/issues",
-            "releases": [
-                {
-                    "base": "https://github.com/packagecontrol/sublime-pywin32",
-                    "tags": true,
-                    "sublime_text": ">=3000",
-                    "platforms": ["windows"]
-                }
-            ]
-        }
-    ] 
+    "windows": {
+        ">=3000": [
+            "pyWin32"
+        ]
+    },
 }
