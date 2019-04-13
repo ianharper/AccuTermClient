@@ -1,7 +1,7 @@
 {
     "windows": {
         ">=3000": [
-            "pyWin32"
+            "python-pywin32"
         ]
     },
 }
