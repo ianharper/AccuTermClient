@@ -3,7 +3,6 @@
 
 import sublime
 import sublime_plugin
-import Pywin32.setup
 from win32com.client import Dispatch
 import os
 import threading
