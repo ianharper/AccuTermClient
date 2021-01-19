@@ -39,7 +39,7 @@ def log_output(window, output_text, panel_name='AccuTermClient'):
 # Returns:
 #   object - AccuTerm Server object.
 def connect(panel_name='AccuTermClient'):
-    mv_svr = Dispatch('atMVSvr71.Server')
+    mv_svr = Dispatch('atPickServer.Server')
     if mv_svr.Connect():
         # log_output(sublime.active_window(), 'Connected', panel_name) # Ideally the connecct would be passed the window but this is intended for debugging only.
         pass
